@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HealThaali — line endings and diff behaviour
+#
+# Windows defaults `core.autocrlf` to true, which rewrites every file it touches
+# to CRLF on checkout. That is what produced the "LF will be replaced by CRLF"
+# warnings on the initial commit: a fresh clone would come back with a working
+# tree full of phantom modifications, and a `git diff` that shows every line of
+# every file as changed even when nothing was.
+#
+# These rules pin the behaviour to what the repository already stores, so what
+# you check out is what CI builds.
+#
+# `text=auto` normalises to LF *inside the repository*. `eol=lf` is the part
+# that keeps the working copy LF as well, on Windows included.
+# ─────────────────────────────────────────────────────────────────────────────
+
+* text=auto eol=lf
+
+# The usual advice is to give *.bat an `eol=crlf` exception. This repository
+# deliberately does not, because the exception was measured and gives nothing:
+# cmd.exe runs LF batch files fine -- run.bat, build.bat and preview.bat have all
+# been executed with LF line endings and worked -- and `git checkout` does not
+# rewrite a file whose stat cache says it is unchanged, so the rule stayed
+# latent while the working copy remained LF anyway. A rule that describes
+# something other than reality is worse than no rule. One ending everywhere.
+
+# Binary assets: never line-ending converted, never diffed as text. `text=auto`
+# usually detects these on its own, but small PNGs and icons occasionally fall
+# through the heuristic, and a corrupted image is silent until it reaches the
+# browser.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
