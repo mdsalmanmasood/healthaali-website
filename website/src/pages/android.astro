@@ -1,0 +1,281 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import AppScreenshot from "../components/AppScreenshot.astro";
+import Button from "../components/Button.astro";
+import DownloadCTA from "../components/DownloadCTA.astro";
+import FAQ from "../components/FAQ.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+
+import { faq } from "../data/faq";
+import { medicalDisclaimer } from "../data/features";
+import { cardScreens, phoneScreens, workflowScreens } from "../data/screenshots";
+import { androidUrl, hasAndroidApp, siteUrl } from "../data/site";
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Android", item: `${siteUrl}/android` },
+  ],
+};
+
+const highlights = [
+  {
+    icon: "utensils",
+    title: "Today's plan, one tap away",
+    text: "Breakfast, lunch, dinner and snacks with calories and times, already counted for you.",
+  },
+  {
+    icon: "camera",
+    title: "Log by camera or barcode",
+    text: "Point at the plate when typing is too much effort; search when it is not.",
+  },
+  {
+    icon: "sparkles",
+    title: "Suggestions shaped by today",
+    text: "HealThaali AI reads what you have already eaten before it recommends anything.",
+  },
+  {
+    icon: "bell",
+    title: "Reminders you control",
+    text: "Meal and logging nudges, switched on and off in Settings.",
+  },
+] as const;
+
+const phoneGallery = [
+  phoneScreens.splash,
+  phoneScreens.welcome,
+  phoneScreens.createProfile,
+  phoneScreens.profileSetup,
+  phoneScreens.dashboard,
+  phoneScreens.mealPlan,
+  phoneScreens.recipeDetail,
+];
+---
+
+<BaseLayout
+  title="HealThaali for Android — Your Food Companion"
+  description="HealThaali for Android: personalized meal plans, nutrition tracking, food scanning, zero-oil recipes and weight progress. See the real app screens."
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container split">
+      <div>
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Android
+        </p>
+        <h1 class="page-hero__title">HealThaali for Android</h1>
+        <p class="page-hero__lead">
+          Your food companion, wherever the kitchen is. The Android app carries the whole
+          experience — plan, log, scan, cook and track — and it works the same way whether you are
+          at home or eating out.
+        </p>
+
+        <div class="page-hero__actions">
+          {
+            hasAndroidApp ? (
+              <Button href={androidUrl} size="lg" external icon="play">
+                Get it on Google Play
+              </Button>
+            ) : (
+              <Button size="lg" icon="play" disabled>
+                Google Play — coming soon
+              </Button>
+            )
+          }
+          <Button href="/features" variant="secondary" size="lg">
+            Read the full feature list
+          </Button>
+        </div>
+
+        {
+          !hasAndroidApp && (
+            <div class="callout mt-xl">
+              <Icon name="info" size={20} />
+              <span>
+                <span class="callout__title">No store link yet — and that is deliberate</span>
+                The Google Play listing is not published, so this page does not link to one. Set
+                <code>PUBLIC_ANDROID_URL</code> in <code>.env</code> and the button above switches to a
+                real link automatically, everywhere on the site.
+              </span>
+            </div>
+          )
+        }
+      </div>
+
+      <div class="split__media">
+        <AppScreenshot
+          src={phoneScreens.dashboard.src}
+          alt={phoneScreens.dashboard.alt}
+          device="phone"
+          priority
+          class="mx-auto"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- Highlights -->
+  <section class="section section--alt" aria-labelledby="android-highlights">
+    <div class="container">
+      <SectionHeading
+        eyebrow="On the phone"
+        eyebrowIcon="smartphone"
+        title="Built for the two minutes you actually have"
+        lead="Standing in the kitchen, on the train, halfway through a meal — the app is designed for quick glances and quick taps."
+        align="center"
+        id="android-highlights"
+      />
+
+      <ul class="card-grid card-grid--4 mt-2xl list-reset">
+        {
+          highlights.map((item) => (
+            <li class="feature-card">
+              <span class="feature-card__icon">
+                <Icon name={item.icon} size={22} />
+              </span>
+              <h3 class="feature-card__title">{item.title}</h3>
+              <p class="feature-card__text">{item.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Phone gallery -->
+  <section class="section" aria-labelledby="android-screens">
+    <div class="container">
+      <SectionHeading
+        eyebrow="App screens"
+        eyebrowIcon="smartphone"
+        title="From first launch to Start Cooking"
+        lead="Splash, onboarding, profile setup, dashboard, meal plan and recipe detail — the actual screens, in order."
+        align="center"
+        id="android-screens"
+      />
+
+      <div class="screen-rail mt-2xl">
+        {
+          phoneGallery.map((screen) => (
+            <AppScreenshot
+              src={screen.src}
+              alt={screen.alt}
+              caption={screen.caption}
+              device="phone"
+            />
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Everyday screens -->
+  <section class="section section--alt" aria-labelledby="android-daily">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Day to day"
+        eyebrowIcon="chart"
+        title="The screens you will open most"
+        lead="Logging, scanning, suggestions, progress, memory and settings."
+        align="center"
+        id="android-daily"
+      />
+
+      <div class="screen-rail mt-2xl">
+        {
+          workflowScreens.map((screen) => (
+            <AppScreenshot
+              src={screen.src}
+              alt={screen.alt}
+              caption={screen.caption}
+              device="screen"
+            />
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Privacy note -->
+  <section class="section" aria-labelledby="android-privacy">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="On your device"
+        eyebrowIcon="shield"
+        title="Settings includes Data & Privacy"
+        lead="HealThaali keeps Data & Privacy, Health Connect and Notifications in the same Settings screen, so you decide what is shared and what is not."
+        align="center"
+        id="android-privacy"
+      />
+
+      <div class="split mt-2xl">
+        <AppScreenshot
+          src={cardScreens.settings.src}
+          alt={cardScreens.settings.alt}
+          caption={cardScreens.settings.caption}
+          device="screen"
+          class="mx-auto"
+        />
+        <div>
+          <ul class="check-list">
+            <li>
+              <Icon name="check" size={20} />
+              <span>Data &amp; Privacy controls, documented in the privacy policy</span>
+            </li>
+            <li>
+              <Icon name="check" size={20} />
+              <span>A defined route to delete your account and its data</span>
+            </li>
+            <li>
+              <Icon name="check" size={20} />
+              <span>Optional Health Connect integration — off unless you turn it on</span>
+            </li>
+          </ul>
+
+          <div class="callout mt-xl">
+            <Icon name="info" size={20} />
+            <span>
+              <span class="callout__title">Not a medical device</span>
+              {medicalDisclaimer}
+            </span>
+          </div>
+
+          <div class="cluster mt-xl">
+            <Button href="/privacy" variant="secondary" icon="shield">
+              Read the privacy policy
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section section--alt" aria-labelledby="android-faq">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Questions"
+        eyebrowIcon="info"
+        title="Android questions"
+        align="center"
+        id="android-faq"
+      />
+      <div class="container--narrow mt-2xl">
+        <FAQ items={faq} />
+      </div>
+    </div>
+  </section>
+
+  <DownloadCTA
+    title="Start with one meal, not a lifestyle overhaul"
+    text="Log a single meal and see how quickly the day's nutrition picture fills in."
+  />
+</BaseLayout>

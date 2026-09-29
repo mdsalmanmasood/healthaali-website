@@ -1,0 +1,146 @@
+---
+import { ClientRouter } from "astro:transitions";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import { absoluteUrl, analyticsId, site, siteUrl } from "../data/site";
+
+import "../styles/tokens.css";
+import "../styles/global.css";
+import "../styles/components.css";
+import "../styles/utilities.css";
+
+interface Props {
+  /** Page title. The brand is appended automatically when it is missing. */
+  title: string;
+  description: string;
+  /** Path or absolute URL to a 1200x630 social image. */
+  image?: string;
+  /** Override the canonical path/URL (defaults to the current URL). */
+  canonical?: string;
+  noindex?: boolean;
+  bodyClass?: string;
+}
+
+const {
+  title,
+  description,
+  image = "/og-image.jpg",
+  canonical,
+  noindex = false,
+  bodyClass = "",
+} = Astro.props;
+
+const pageTitle = title.includes(site.name) ? title : `${title} | ${site.name}`;
+const canonicalUrl = canonical ? absoluteUrl(canonical) : new URL(Astro.url.pathname, siteUrl).href;
+const ogImage = /^https?:\/\//.test(image) ? image : absoluteUrl(image);
+const ogType = "website";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex ? <meta name="robots" content="noindex, nofollow" /> : null}
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_IN" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Icons, manifest, theme colour -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#fdfbf5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1511" media="(prefers-color-scheme: dark)" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!--
+      Theme boot. Runs before anything paints so dark mode never flashes white.
+      Kept inline (not bundled) on purpose: it must not wait for a network round-trip.
+    -->
+    <script is:inline>
+      (function () {
+        var KEY = "healthaali-theme";
+        var root = document.documentElement;
+        var media = window.matchMedia("(prefers-color-scheme: dark)");
+
+        function apply() {
+          var pref = "system";
+          try {
+            pref = localStorage.getItem(KEY) || "system";
+          } catch (e) {
+            /* private mode / storage disabled: fall back to system */
+          }
+          var dark = pref === "dark" || (pref !== "light" && media.matches);
+          root.classList.toggle("dark", dark);
+          root.setAttribute("data-theme", pref);
+          root.style.colorScheme = dark ? "dark" : "light";
+
+          // Let the toggle keep its label in sync when the preference changes
+          // from anywhere (click, system change, another tab).
+          document.dispatchEvent(
+            new CustomEvent("healthaali:themechange", { detail: { preference: pref, dark: dark } })
+          );
+        }
+
+        apply();
+        window.__healthaaliApplyTheme = apply;
+
+        try {
+          media.addEventListener("change", apply);
+        } catch (e) {
+          /* older browsers: no live system-preference updates */
+        }
+
+        // Re-apply after an Astro view-transition swap.
+        document.addEventListener("astro:after-swap", apply);
+      })();
+    </script>
+
+    <ClientRouter />
+
+    {
+      analyticsId ? (
+        <script
+          is:inline
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={`{"token": "${analyticsId}"}`}
+        />
+      ) : null
+    }
+
+    <slot name="head" />
+  </head>
+
+  <body class={bodyClass}>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <Header />
+
+    <main id="main-content">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>

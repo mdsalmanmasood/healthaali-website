@@ -1,0 +1,85 @@
+---
+import Logo from "./Logo.astro";
+import MobileMenu from "./MobileMenu.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+import { androidUrl, hasAndroidApp, site } from "../data/site";
+
+const path = Astro.url.pathname;
+const isCurrent = (href: string) => path === href || (href !== "/" && path.startsWith(`${href}/`));
+
+const appHref = hasAndroidApp ? androidUrl : "/android";
+---
+
+<header class="site-header" data-site-header>
+  <div class="container site-header__inner">
+    <!--
+      No aria-label here on purpose. The lockup already renders the wordmark and
+      tagline as real text, and an aria-label would REPLACE that visible text as
+      the accessible name. Lighthouse/axe flags exactly that as
+      `label-content-name-mismatch`, because a screen-reader user would hear a
+      name that does not match what is on screen. The mobile menu's brand link is
+      the opposite case: it renders the monogram only, so it does need a label.
+    -->
+    <a class="brand" href="/">
+      <Logo />
+    </a>
+
+    <nav class="nav" aria-label="Primary">
+      <ul class="nav__list">
+        {
+          [
+            { label: "Features", href: "/features" },
+            { label: "Web App", href: "/web-app" },
+            { label: "Android", href: "/android" },
+            { label: "About", href: "/about" },
+          ].map((item) => (
+            <li>
+              <a
+                class="nav__link"
+                href={item.href}
+                aria-current={isCurrent(item.href) ? "page" : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <ThemeToggle />
+      <a class="btn btn--primary btn--sm btn--header" href={appHref}>Get the app</a>
+      <button
+        class="menu-toggle"
+        type="button"
+        data-menu-toggle
+        aria-controls="mobile-menu"
+        aria-expanded="false"
+        aria-label="Open navigation menu"
+      >
+        <span class="menu-toggle__bars" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+
+  <MobileMenu />
+</header>
+
+<script>
+  // One delegated listener for the whole document; survives view transitions.
+  function syncHeaderScroll() {
+    const scrolled = window.scrollY > 8;
+    for (const header of document.querySelectorAll("[data-site-header]")) {
+      header.classList.toggle("is-scrolled", scrolled);
+    }
+  }
+
+  if (!document.documentElement.dataset.headerBound) {
+    document.documentElement.dataset.headerBound = "1";
+    window.addEventListener("scroll", syncHeaderScroll, { passive: true });
+    document.addEventListener("astro:page-load", syncHeaderScroll);
+  }
+
+  syncHeaderScroll();
+</script>

@@ -1,0 +1,81 @@
+---
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  caption?: string;
+  /** Above-the-fold screenshots only — never lazy-load the LCP image. */
+  priority?: boolean;
+  /**
+   * phone   — true phone proportions (from the board's first row)
+   * screen  — the wider row-two mockups, framed as a card
+   * browser — desktop/web-app framing with a URL bar
+   */
+  device?: "phone" | "screen" | "browser";
+  /** Shown in the browser chrome when device="browser". */
+  url?: string;
+  class?: string;
+}
+
+const {
+  src,
+  alt,
+  caption,
+  priority = false,
+  device = "phone",
+  url = "healthaali.in",
+  class: className = "",
+} = Astro.props;
+
+const loading = priority ? "eager" : "lazy";
+
+const widths =
+  device === "phone" ? [200, 300, 400] : device === "browser" ? [420, 640, 840] : [210, 320, 420];
+
+const sizes =
+  device === "phone"
+    ? "(max-width: 767px) 55vw, 250px"
+    : device === "browser"
+      ? "(max-width: 1023px) 100vw, 720px"
+      : "(max-width: 767px) 78vw, 340px";
+---
+
+{
+  device === "browser" ? (
+    <figure class:list={["browser", className]}>
+      <div class="browser__bar" aria-hidden="true">
+        <span class="browser__dot" />
+        <span class="browser__dot" />
+        <span class="browser__dot" />
+        <span class="browser__url">{url}</span>
+      </div>
+      <Image
+        src={src}
+        alt={alt}
+        class="browser__img"
+        widths={widths}
+        sizes={sizes}
+        loading={loading}
+        decoding="async"
+        {...(priority ? { fetchpriority: "high" } : {})}
+      />
+      {caption && <figcaption>{caption}</figcaption>}
+    </figure>
+  ) : (
+    <figure class:list={[device === "phone" ? "phone" : "screen", className]}>
+      <Image
+        src={src}
+        alt={alt}
+        class={device === "phone" ? "phone__img" : "screen__img"}
+        widths={widths}
+        sizes={sizes}
+        loading={loading}
+        decoding="async"
+        {...(priority ? { fetchpriority: "high" } : {})}
+      />
+      {caption && <figcaption>{caption}</figcaption>}
+    </figure>
+  )
+}

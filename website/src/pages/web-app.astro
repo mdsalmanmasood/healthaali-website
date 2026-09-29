@@ -1,0 +1,232 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import AppScreenshot from "../components/AppScreenshot.astro";
+import Button from "../components/Button.astro";
+import DownloadCTA from "../components/DownloadCTA.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+
+import { medicalDisclaimer } from "../data/features";
+import { cardScreens, phoneScreens } from "../data/screenshots";
+import { hasWebApp, site, siteUrl, webAppUrl } from "../data/site";
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Web App", item: `${siteUrl}/web-app` },
+  ],
+};
+
+const webCapabilities = [
+  {
+    icon: "gauge",
+    title: "The same dashboard",
+    text: "Today's calories against your target, with protein, carbs, fat and fibre — the view you check before deciding dinner.",
+  },
+  {
+    icon: "calendar",
+    title: "Your meal plan on a big screen",
+    text: "Planning the week is easier with room to see it, which is where a browser genuinely beats a phone.",
+  },
+  {
+    icon: "chart",
+    title: "Progress with context",
+    text: "Weight, nutrition and habit history over 1M, 3M, 6M and 1Y ranges.",
+  },
+  {
+    icon: "users",
+    title: "One account, one set of data",
+    text: "The browser and the Android app are the same experience over the same account — not two products to keep in sync by hand.",
+  },
+] as const;
+---
+
+<BaseLayout
+  title="HealThaali Web App — Manage Your Food Online"
+  description="The HealThaali web experience: the same personalized plan, nutrition tracking and progress as the Android app, in any modern browser. Availability status and what to expect."
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Web App
+      </p>
+      <h1 class="page-hero__title">HealThaali in your browser</h1>
+      <p class="page-hero__lead">
+        Access your plan, your nutrition and your progress from any modern browser — no install, no
+        app store. It is the same account and the same data you see on Android.
+      </p>
+
+      <div class="page-hero__actions">
+        {
+          hasWebApp ? (
+            <Button href={webAppUrl} size="lg" external icon="globe">
+              Open the Web App
+            </Button>
+          ) : (
+            <Button size="lg" icon="globe" disabled>
+              Web app — coming soon
+            </Button>
+          )
+        }
+        <Button href="/android" variant="secondary" size="lg" icon="smartphone">
+          Use the Android app today
+        </Button>
+      </div>
+
+      {
+        !hasWebApp && (
+          <div class="callout mt-xl">
+            <Icon name="info" size={20} />
+            <span>
+              <span class="callout__title">Not released yet — this is not a broken link</span>
+              The web app has not been published, so there is no URL to send you to. Set
+              <code>PUBLIC_WEBAPP_URL</code> in <code>.env</code> and every “Open the Web App” button on
+              the site starts working, including this one.
+            </span>
+          </div>
+        )
+      }
+
+      {
+        hasWebApp && (
+          <p class="page-hero__meta">
+            Opening the web app? Bookmark <strong>{webAppUrl.replace(/^https?:\/\//, "")}</strong>.
+          </p>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="section--tight" aria-labelledby="web-caps">
+    <div class="container">
+      <SectionHeading
+        eyebrow="What it covers"
+        eyebrowIcon="globe"
+        title="The parts of HealThaali that belong on a bigger screen"
+        id="web-caps"
+      />
+
+      <ul class="card-grid card-grid--4 mt-2xl list-reset">
+        {
+          webCapabilities.map((item) => (
+            <li class="feature-card">
+              <span class="feature-card__icon">
+                <Icon name={item.icon} size={22} />
+              </span>
+              <h3 class="feature-card__title">{item.title}</h3>
+              <p class="feature-card__text">{item.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="web-screens">
+    <div class="container">
+      <SectionHeading
+        eyebrow="What you are getting"
+        eyebrowIcon="chart"
+        title="These are app screens — the web build will mirror them"
+        lead="HealThaali has not published web screenshots yet, so rather than mock up a fake browser window, here are the real screens the web experience is being built from."
+        align="center"
+        id="web-screens"
+      />
+
+      <div class="screen-rail mt-2xl">
+        {
+          [phoneScreens.dashboard, phoneScreens.mealPlan, phoneScreens.recipeDetail].map(
+            (screen) => (
+              <AppScreenshot
+                src={screen.src}
+                alt={screen.alt}
+                caption={screen.caption}
+                device="phone"
+              />
+            )
+          )
+        }
+      </div>
+
+      <div class="screen-rail mt-2xl">
+        {
+          [cardScreens.progress, cardScreens.foodLog, cardScreens.foodMemory].map((screen) => (
+            <AppScreenshot
+              src={screen.src}
+              alt={screen.alt}
+              caption={screen.caption}
+              device="screen"
+            />
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="web-status">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="Status"
+        eyebrowIcon="info"
+        title="How to know when it goes live"
+        align="center"
+        id="web-status"
+      />
+
+      <ul class="fact-grid mt-2xl" role="list">
+        <li class="fact">
+          <p class="fact__term">Android</p>
+          <p class="fact__value">
+            The primary companion app. Its store link appears site-wide the moment the listing is
+            published.
+          </p>
+        </li>
+        <li class="fact">
+          <p class="fact__term">Web</p>
+          <p class="fact__value">
+            In development. This page and the header button both flip to live links automatically.
+          </p>
+        </li>
+        <li class="fact">
+          <p class="fact__term">Announcements</p>
+          <p class="fact__value">
+            Recipe videos and product updates are posted on YouTube and Instagram as @healthaali.
+          </p>
+        </li>
+        <li class="fact">
+          <p class="fact__term">Your data</p>
+          <p class="fact__value">
+            One account across screens. What is stored, and how to delete it, is set out in the
+            privacy policy.
+          </p>
+        </li>
+      </ul>
+
+      <div class="callout callout--info mt-2xl">
+        <Icon name="info" size={20} />
+        <span>
+          <span class="callout__title">Health information, not medical advice</span>
+          {medicalDisclaimer}
+        </span>
+      </div>
+
+      <p class="notice mt-lg">
+        {site.name} does not claim offline mode, installable PWA features or push notifications on
+        the web until they genuinely ship.
+      </p>
+    </div>
+  </section>
+
+  <DownloadCTA
+    title="No install required — when it is ready"
+    text="Until then, the Android app carries the full experience: plan, log, scan, cook and track."
+  />
+</BaseLayout>

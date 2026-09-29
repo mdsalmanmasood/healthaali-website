@@ -1,0 +1,198 @@
+/* ==========================================================================
+   HealThaali — design tokens
+   --------------------------------------------------------------------------
+   Brand values are sampled from the supplied brand assets, not invented:
+
+     · primary green  #2a8a33  — app UI buttons ("Continue", "Start Cooking"),
+                                progress ring, logo wordmark, leaf mark
+     · accent orange  #f06000  — the "T" of the HT monogram, highlight numbers
+     · gold           #e0a93a  — the gold rim around the HT monogram
+     · cream          #fdfbf5  — app + board background ("Healthy Food" canvas)
+
+   Never hardcode a colour inside a component; always reference a token here.
+   ========================================================================== */
+
+:root {
+  /* ---------- brand ------------------------------------------------------ */
+  --brand-primary: #2a8a33;
+  --brand-primary-dark: #1f6b28;
+  --brand-primary-light: #4fae55;
+  --brand-primary-soft: #e8f4e9;
+  --brand-primary-tint: rgba(42, 138, 51, 0.08);
+
+  --brand-accent: #f06000;
+  --brand-accent-dark: #c94f00;
+  --brand-accent-soft: #fdefe2;
+
+  --brand-gold: #e0a93a;
+  --brand-gold-soft: #fbf2dd;
+
+  /*
+   * Button surfaces are deliberately separate from --brand-primary. The accent
+   * green is fine for borders and icons but does not carry white label text to
+   * WCAG AA on its own, so the button colour is darkened until it does
+   * (5.4:1). See the dark theme below, where the pairing inverts instead.
+   */
+  --btn-primary-bg: #257a2d;
+  --btn-primary-bg-hover: #1c5f23;
+  --btn-primary-fg: #ffffff;
+
+  /* ---------- semantic status -------------------------------------------- */
+  --success: #2a8a33;
+  --warning: #d99114;
+  --danger: #cc3b3b;
+  --info: #2f6fd0;
+
+  /* ---------- light theme surfaces --------------------------------------- */
+  --background: #fdfbf5;
+  --background-alt: #f7f5ec;
+  --surface: #f7f5ec;
+  --surface-elevated: #ffffff;
+  --surface-sunken: #f2efe3;
+
+  --foreground: #16241b;
+  --foreground-soft: #33473a;
+  --muted: #5e7267;
+  --muted-strong: #47594f;
+
+  --border: #e5e1d3;
+  --border-strong: #d5d0be;
+  --overlay: rgba(22, 36, 27, 0.45);
+  --header-bg: rgba(253, 251, 245, 0.82);
+  --code-bg: #f2efe3;
+
+  /* ---------- typography ------------------------------------------------- */
+  /* Inter is used when it is available locally; otherwise the system stack.
+     No webfont request is made, so there is no render-blocking font fetch. */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.1875rem;
+  --text-xl: 1.375rem;
+  --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 1.9rem);
+  --text-3xl: clamp(1.75rem, 1.4rem + 1.6vw, 2.4rem);
+  --text-h2: clamp(1.9rem, 1.4rem + 2.4vw, 3rem);
+  --text-h1: clamp(2.25rem, 1.6rem + 3.2vw, 3.9rem);
+  --text-display: clamp(2.5rem, 1.6rem + 4.4vw, 4.75rem);
+
+  --leading-tight: 1.08;
+  --leading-snug: 1.25;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+
+  --tracking-tight: -0.02em;
+  --tracking-tighter: -0.03em;
+  --tracking-wide: 0.06em;
+
+  /* ---------- spacing & layout ------------------------------------------ */
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  --space-4xl: 6rem;
+
+  --container: 1180px;
+  --container-narrow: 780px;
+  --container-wide: 1340px;
+  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+
+  --section-space: clamp(4.5rem, 9vw, 8.75rem);
+  --section-space-sm: clamp(3rem, 6vw, 5.5rem);
+
+  --header-height: 68px;
+
+  /* ---------- radius ----------------------------------------------------- */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 999px;
+
+  /* ---------- elevation -------------------------------------------------- */
+  --shadow-xs: 0 1px 2px rgba(22, 36, 27, 0.05);
+  --shadow-sm: 0 2px 8px rgba(22, 36, 27, 0.05);
+  --shadow-md: 0 10px 28px rgba(22, 36, 27, 0.08);
+  --shadow-lg: 0 24px 60px rgba(22, 36, 27, 0.12);
+  --ring: 0 0 0 3px rgba(42, 138, 51, 0.35);
+
+  /* ---------- motion ----------------------------------------------------- */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  /* ---------- breakpoints (documentation only; CSS can't read these) ----- */
+  --bp-sm: 480px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+  --bp-2xl: 1536px;
+
+  color-scheme: light;
+}
+
+/* ==========================================================================
+   Dark theme
+   Deep green-charcoal rather than pure black, so the food photography and
+   app screenshots keep their warmth instead of looking inverted.
+   ========================================================================== */
+
+.dark {
+  --brand-primary: #4caf50;
+  --brand-primary-dark: #38943c;
+  --brand-primary-light: #6ec871;
+  --brand-primary-soft: rgba(76, 175, 80, 0.14);
+  --brand-primary-tint: rgba(76, 175, 80, 0.1);
+
+  --brand-accent: #ff7a1f;
+  --brand-accent-dark: #f06000;
+  --brand-accent-soft: rgba(255, 122, 31, 0.14);
+
+  --brand-gold: #e8b752;
+  --brand-gold-soft: rgba(232, 183, 82, 0.14);
+
+  /* Bright brand green with near-black label text: 6.6:1. */
+  --btn-primary-bg: #4caf50;
+  --btn-primary-bg-hover: #5cc063;
+  --btn-primary-fg: #08130d;
+
+  --success: #5cc063;
+  --warning: #e5b04a;
+  --danger: #f07575;
+  --info: #7aa9ec;
+
+  --background: #0b1511;
+  --background-alt: #0e1a15;
+  --surface: #111f19;
+  --surface-elevated: #16261f;
+  --surface-sunken: #0a120e;
+
+  --foreground: #f1f6f2;
+  --foreground-soft: #d5e2d9;
+  --muted: #9db2a5;
+  --muted-strong: #b6c7bb;
+
+  --border: #23362c;
+  --border-strong: #2f4739;
+  --overlay: rgba(4, 9, 6, 0.7);
+  --header-bg: rgba(11, 21, 17, 0.8);
+  --code-bg: #0e1a15;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 26px 64px rgba(0, 0, 0, 0.6);
+  --ring: 0 0 0 3px rgba(76, 175, 80, 0.45);
+
+  color-scheme: dark;
+}

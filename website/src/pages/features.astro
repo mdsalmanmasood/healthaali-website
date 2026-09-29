@@ -1,0 +1,204 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import AppScreenshot from "../components/AppScreenshot.astro";
+import Button from "../components/Button.astro";
+import DownloadCTA from "../components/DownloadCTA.astro";
+import FAQ from "../components/FAQ.astro";
+import FeatureCard from "../components/FeatureCard.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+
+import { faq } from "../data/faq";
+import { featureGroups, medicalDisclaimer, pillars } from "../data/features";
+import { phoneScreens, workflowScreens } from "../data/screenshots";
+import { site, siteUrl } from "../data/site";
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Features", item: `${siteUrl}/features` },
+  ],
+};
+---
+
+<BaseLayout
+  title="HealThaali Features — Simple, Personalized Food Management"
+  description="Every HealThaali feature explained: personalized recipes, nutrition tracking, meal plans, food logging and scanning, AI suggestions, progress and privacy."
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Features
+      </p>
+      <h1 class="page-hero__title">Everything HealThaali does, written down plainly</h1>
+      <p class="page-hero__lead">
+        No feature-count inflation. These are the screens that exist in the HealThaali app,
+        grouped by what they are actually for — from a two-minute profile setup to the weight
+        trend you check on a Sunday evening.
+      </p>
+
+      <div class="page-hero__actions">
+        <Button href="/android" icon="smartphone">See it on Android</Button>
+        <Button href="#nutrition" variant="secondary" icon="arrowRight" iconPosition="end">
+          Jump to nutrition tracking
+        </Button>
+      </div>
+
+      <nav class="anchor-nav mt-2xl" aria-label="Feature categories">
+        {
+          featureGroups.map((group) => (
+            <a class="chip chip--brand" href={`#${group.id}`}>
+              <Icon name={group.icon} size={14} />
+              {group.eyebrow}
+            </a>
+          ))
+        }
+      </nav>
+    </div>
+  </section>
+
+  <!-- Pillars -->
+  <section class="section--tight" aria-labelledby="pillars-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="The short version"
+        title="Seven pillars"
+        lead="If you only read one section, read this one."
+        id="pillars-title"
+      />
+      <ul class="card-grid card-grid--3 mt-2xl list-reset">
+        {pillars.map((feature) => <FeatureCard {...feature} />)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Groups -->
+  {
+    featureGroups.map((group, index) => (
+      <section
+        class:list={["section", index % 2 === 0 && "section--alt"]}
+        id={group.id}
+        aria-labelledby={`${group.id}-title`}
+      >
+        <div class="container">
+          <SectionHeading
+            eyebrow={group.eyebrow}
+            eyebrowIcon={group.icon}
+            title={group.title}
+            lead={group.blurb}
+            id={`${group.id}-title`}
+          />
+
+          <div class="mt-2xl">
+            <ul class="feature-list list-reset grid-2" role="list">
+              {group.items.map((item) => (
+                <li class="feature-list__item">
+                  <span class="feature-list__head">
+                    <Icon name={item.icon} size={20} />
+                    {item.title}
+                  </span>
+                  <span class="feature-list__body">{item.description}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    ))
+  }
+
+  <!-- Real screens -->
+  <section class="section section--alt" aria-labelledby="screens-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Straight from the app"
+        eyebrowIcon="smartphone"
+        title="The screens these features live on"
+        lead="Captured from the HealThaali app design — not marketing renders."
+        align="center"
+        id="screens-title"
+      />
+
+      <div class="screen-rail mt-2xl">
+        {
+          workflowScreens.map((screen) => (
+            <AppScreenshot
+              src={screen.src}
+              alt={screen.alt}
+              caption={screen.caption}
+              device="screen"
+            />
+          ))
+        }
+      </div>
+
+      <div class="screen-rail mt-2xl">
+        {
+          [phoneScreens.dashboard, phoneScreens.mealPlan, phoneScreens.recipeDetail].map(
+            (screen) => (
+              <AppScreenshot
+                src={screen.src}
+                alt={screen.alt}
+                caption={screen.caption}
+                device="phone"
+              />
+            )
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Scope -->
+  <section class="section" aria-labelledby="scope-title">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="Scope"
+        eyebrowIcon="info"
+        title="What HealThaali is not"
+        align="center"
+        id="scope-title"
+      />
+      <div class="callout mt-xl">
+        <Icon name="info" size={20} />
+        <span>
+          <span class="callout__title">Health information, not medical advice</span>
+          {medicalDisclaimer}
+        </span>
+      </div>
+      <p class="notice mt-lg">
+        {site.name} also does not publish ratings, download counts or customer numbers on this
+        site. If a number is not verifiable, it does not appear here.
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section section--alt" aria-labelledby="faq-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Questions"
+        eyebrowIcon="info"
+        title="Common questions"
+        align="center"
+        id="faq-title"
+      />
+      <div class="container--narrow mt-2xl">
+        <FAQ items={faq} />
+      </div>
+    </div>
+  </section>
+
+  <DownloadCTA
+    title="Pick a feature and try it on a real meal"
+    text="The fastest way to judge HealThaali is to log one breakfast and see what it suggests for dinner."
+  />
+</BaseLayout>

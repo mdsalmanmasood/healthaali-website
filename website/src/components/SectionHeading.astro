@@ -1,0 +1,41 @@
+---
+import Icon from "./Icon.astro";
+import type { IconName } from "../lib/icons";
+
+interface Props {
+  eyebrow?: string;
+  eyebrowIcon?: IconName;
+  title: string;
+  lead?: string;
+  align?: "start" | "center";
+  /** Heading level so each page keeps a single <h1>. */
+  as?: "h1" | "h2" | "h3";
+  id?: string;
+  class?: string;
+}
+
+const {
+  eyebrow,
+  eyebrowIcon,
+  title,
+  lead,
+  align = "start",
+  as: Tag = "h2",
+  id,
+  class: className = "",
+} = Astro.props;
+---
+
+<div class:list={["section-head", align === "center" && "section-head--center", className]}>
+  {
+    eyebrow && (
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true" />
+        {eyebrowIcon && <Icon name={eyebrowIcon} size={14} />}
+        {eyebrow}
+      </p>
+    )
+  }
+  <Tag class="section-head__title" id={id}>{title}</Tag>
+  {lead && <p class="section-head__lead">{lead}</p>}
+</div>

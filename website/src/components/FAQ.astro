@@ -1,0 +1,26 @@
+---
+import Icon from "./Icon.astro";
+import type { FaqItem } from "../data/faq";
+
+interface Props {
+  items: FaqItem[];
+  /** Extra heading level control is unnecessary: <summary> carries the text. */
+  class?: string;
+}
+
+const { items, class: className = "" } = Astro.props;
+---
+
+<div class:list={["faq", className]}>
+  {
+    items.map((item, index) => (
+      <details class="faq__item" name="healthaali-faq" open={index === 0}>
+        <summary class="faq__question">
+          <span>{item.question}</span>
+          <Icon name="chevronDown" class="faq__chevron" size={20} />
+        </summary>
+        <div class="faq__answer">{item.answer}</div>
+      </details>
+    ))
+  }
+</div>

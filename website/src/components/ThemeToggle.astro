@@ -1,0 +1,73 @@
+---
+import Icon from "./Icon.astro";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = "" } = Astro.props;
+
+/** Order matches the cycle: System -> Light -> Dark -> System. */
+const states = [
+  { id: "system", label: "System", icon: "monitorSmall" as const },
+  { id: "light", label: "Light", icon: "sun" as const },
+  { id: "dark", label: "Dark", icon: "moon" as const },
+];
+---
+
+<button class:list={["theme-toggle", className]} type="button" data-theme-toggle>
+  {
+    states.map((state) => (
+      <span class="theme-toggle__state" data-theme-when={state.id}>
+        <Icon name={state.icon} size={18} class="theme-toggle__icon" />
+        <span class="theme-toggle__label">{state.label}</span>
+      </span>
+    ))
+  }
+</button>
+
+<script>
+  const KEY = "healthaali-theme";
+  const ORDER = ["system", "light", "dark"] as const;
+  const LABELS: Record<string, string> = { system: "System", light: "Light", dark: "Dark" };
+
+  const current = () => document.documentElement.dataset.theme || "system";
+
+  function syncToggleLabels() {
+    const now = current();
+    const next = ORDER[(ORDER.indexOf(now as "system") + 1) % ORDER.length];
+    for (const button of document.querySelectorAll("[data-theme-toggle]")) {
+      button.setAttribute(
+        "aria-label",
+        `Colour theme: ${LABELS[now]}. Activate to switch to ${LABELS[next]}.`
+      );
+      button.setAttribute("title", `Colour theme: ${LABELS[now]}`);
+    }
+  }
+
+  // Delegated + guarded, so view-transition navigations never double-bind.
+  if (!document.documentElement.dataset.themeToggleBound) {
+    document.documentElement.dataset.themeToggleBound = "1";
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest("[data-theme-toggle]")) return;
+
+      const now = current();
+      const next = ORDER[(ORDER.indexOf(now as "system") + 1) % ORDER.length];
+      try {
+        localStorage.setItem(KEY, next);
+      } catch {
+        /* storage unavailable — the toggle still works for this page view */
+      }
+      window.__healthaaliApplyTheme?.();
+      syncToggleLabels();
+    });
+
+    document.addEventListener("astro:page-load", syncToggleLabels);
+    document.addEventListener("healthaali:themechange", syncToggleLabels);
+  }
+
+  syncToggleLabels();
+</script>

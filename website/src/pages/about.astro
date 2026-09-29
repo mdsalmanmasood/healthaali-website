@@ -1,0 +1,245 @@
+---
+import { Image } from "astro:assets";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Button from "../components/Button.astro";
+import DownloadCTA from "../components/DownloadCTA.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+
+import bannerImage from "../assets/brand/banner.jpg";
+import { medicalDisclaimer } from "../data/features";
+import { site, siteUrl } from "../data/site";
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "About", item: `${siteUrl}/about` },
+  ],
+};
+
+const principles = [
+  {
+    icon: "utensils",
+    title: "Real food first",
+    text: "A plan only works if you would happily eat it again tomorrow. HealThaali builds around the thali, not around salads pretending to be lunch.",
+  },
+  {
+    icon: "droplet",
+    title: "Zero-oil is a method, not a gimmick",
+    text: "The cooking approach is the product. Same dishes, cooked lighter, with the technique explained rather than assumed.",
+  },
+  {
+    icon: "brain",
+    title: "Remember, then adapt",
+    text: "Record. Remember. Reason. Reshape. The app keeps a working memory of your habits and lets it change the advice it gives you.",
+  },
+  {
+    icon: "shield",
+    title: "Privacy is a setting, not a promise",
+    text: "Data & Privacy lives inside the app, in Settings, where you can actually find it — and the policy says what happens to your data.",
+  },
+] as const;
+---
+
+<BaseLayout
+  title="About HealThaali"
+  description="HealThaali is built around one idea: healthy eating has to fit real Indian home cooking. Read what it is, who it is for, and how it treats your data."
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        About
+      </p>
+      <h1 class="page-hero__title">Healthy cooking, better you — starting from the food you grew up eating</h1>
+      <p class="page-hero__lead">
+        {site.name} is a personalized nutrition companion for people who want to eat better without
+        giving up the food they actually like. It plans meals, counts what matters, remembers what
+        you prefer, and keeps a steady view of your progress.
+      </p>
+    </div>
+  </section>
+
+  <section class="section--tight" aria-label="HealThaali brand banner">
+    <div class="container">
+      <figure class="screen">
+        <Image
+          src={bannerImage}
+          alt="HealThaali brand banner: a bowl of salad and grilled protein with the HT monogram, the wordmark HealThaali, the tagline Healthy Food Happier You and the four promises zero-oil recipes, weight loss, healthy lifestyle and better you"
+          widths={[640, 1024, 1600]}
+          sizes="(max-width: 1023px) 100vw, 1180px"
+          loading="eager"
+          decoding="async"
+          fetchpriority="high"
+          class="screen__img"
+        />
+        <figcaption>HealThaali — Healthy Food, Happier You · Healthy Cooking, Weight Loss, Better You</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="about-what">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="What it is"
+        eyebrowIcon="info"
+        title="A food app that happens to care about your health goals"
+        id="about-what"
+      />
+
+      <div class="prose mt-xl">
+        <p>
+          Most nutrition apps assume you cook the way a western meal plan says you should. In an
+          Indian kitchen, that assumption breaks in the first week. {site.name} starts from the
+          other end: everyday home food — rice, dal, sabzi, fry, thalis and snacks — rebuilt to be
+          lighter and higher in protein, with the numbers kept for you.
+        </p>
+        <p>
+          You get a personalised plan rather than a generic diet list, a dashboard that shows
+          protein, carbs, fat and fibre against your own targets, food logging that takes seconds
+          (search, camera or barcode), and step-by-step recipes with a Start Cooking mode. Over
+          time, Food Memory records what you enjoy, prefer and avoid so the suggestions get
+          sharper without you re-entering anything.
+        </p>
+        <p>
+          Alongside the plan sits HealThaali AI, which looks at what you have already eaten today —
+          not just your profile — before suggesting anything. If most of your carbs arrived before
+          lunch, it will steer dinner towards protein instead of lecturing you about breakfast.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="about-principles">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Product philosophy"
+        eyebrowIcon="leaf"
+        title="Four things we refuse to compromise on"
+        align="center"
+        id="about-principles"
+      />
+
+      <ul class="card-grid card-grid--4 mt-2xl list-reset">
+        {
+          principles.map((item) => (
+            <li class="feature-card">
+              <span class="feature-card__icon">
+                <Icon name={item.icon} size={22} />
+              </span>
+              <h3 class="feature-card__title">{item.title}</h3>
+              <p class="feature-card__text">{item.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="about-who">
+    <div class="container split">
+      <div>
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Who it is for
+        </p>
+        <h2 class="split__title" id="about-who">People who cook at home and want the numbers to add up</h2>
+        <p class="split__text">
+          {site.name} suits anyone who is trying to lose weight, hold on to muscle, or simply eat
+          better — while still eating home food. It is also built for people managing something
+          specific: the profile has room for health conditions and food preferences, and the plan
+          respects them.
+        </p>
+        <ul class="check-list">
+          <li>
+            <Icon name="check" size={20} />
+            <span>Weight-loss goals with a target weight you set yourself</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Higher-protein meals from everyday vegetarian and non-vegetarian cooking</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Zero-oil technique for people cutting down on fried food</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Food preferences and conditions recorded once, applied everywhere</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="split__media">
+        <div class="callout">
+          <Icon name="info" size={20} />
+          <span>
+            <span class="callout__title">Where HealThaali stops</span>
+            {medicalDisclaimer}
+          </span>
+        </div>
+
+        <div class="callout callout--brand mt-lg">
+          <Icon name="shield" size={20} />
+          <span>
+            <span class="callout__title">Our stance on your data</span>
+            Health information is sensitive, so {site.name} treats it that way: Data &amp; Privacy is a
+            first-class screen in the app, account deletion is documented, and nothing about your
+            health is published on this website.
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="about-vision">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="Vision"
+        eyebrowIcon="leaf"
+        title="The food you already love, working in your favour"
+        align="center"
+        id="about-vision"
+      />
+
+      <div class="prose mt-xl">
+        <p>
+          The long-term goal is straightforward: make the healthier version of a familiar dish the
+          easy option — in the app that plans it, in the recipes that teach it, and in the videos
+          and posts that support it. No separate “diet kitchen”. No food you have to learn to
+          tolerate.
+        </p>
+        <p>
+          We publish recipes and cooking videos on YouTube and Instagram as
+          <strong>@healthaali</strong>, alongside the app. If you want to see the food before you
+          commit to tracking it, that is the fastest place to look.
+        </p>
+      </div>
+
+      <div class="cluster mt-2xl" style="justify-content: center">
+        {
+          site.socials.map((social) => (
+            <Button href={social.href} variant="secondary" external icon="arrowUpRight" iconPosition="end">
+              {social.name} — @healthaali
+            </Button>
+          ))
+        }
+        <Button href="/contact" icon="arrowRight" iconPosition="end">
+          Get in touch
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <DownloadCTA
+    title="See the food, then try the app"
+    text="Recipes and technique are free to watch. The app is where the plan, the numbers and the progress live."
+  />
+</BaseLayout>

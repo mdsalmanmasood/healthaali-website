@@ -1,0 +1,207 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+
+import { medicalDisclaimer } from "../data/features";
+import { contactEmail, site } from "../data/site";
+
+const hasEmail = contactEmail.length > 0;
+
+const sections = [
+  { id: "agreement", label: "Agreement" },
+  { id: "service", label: "The service" },
+  { id: "medical", label: "Medical disclaimer" },
+  { id: "account", label: "Your account" },
+  { id: "acceptable-use", label: "Acceptable use" },
+  { id: "content", label: "Recipes and content" },
+  { id: "third-parties", label: "Third-party services" },
+  { id: "availability", label: "Availability" },
+  { id: "ip", label: "Intellectual property" },
+  { id: "liability", label: "Liability" },
+  { id: "termination", label: "Termination" },
+  { id: "law", label: "Governing law" },
+  { id: "changes", label: "Changes" },
+  { id: "contact", label: "Contact" },
+];
+---
+
+<BaseLayout
+  title="HealThaali Terms of Service"
+  description="The terms that apply when you use the HealThaali app and website, including the medical disclaimer, acceptable use, content ownership and liability."
+>
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Legal
+      </p>
+      <h1 class="page-hero__title">Terms of Service</h1>
+      <p class="page-hero__lead">
+        These terms cover your use of the {site.name} application and this website. Please read the
+        medical disclaimer in particular.
+      </p>
+      <div class="callout mt-xl">
+        <Icon name="info" size={20} />
+        <span>
+          <span class="callout__title">Pre-launch draft — placeholders must be completed</span>
+          Square brackets mark details that have not been supplied and must be filled in — and the
+          whole document reviewed by a qualified adviser — before launch. Effective date:{" "}
+          <strong>{site.placeholders.effectiveDate}</strong>.
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-label="Terms of Service contents">
+    <div class="container">
+      <nav class="anchor-nav mb-2xl" aria-label="Sections of these terms">
+        {sections.map((section) => <a class="chip" href={`#${section.id}`}>{section.label}</a>)}
+      </nav>
+
+      <div class="prose">
+        <h2 id="agreement">1. Agreement</h2>
+        <p>
+          By downloading, installing or using the {site.name} app or browsing this website, you agree
+          to these terms. If you do not agree, please do not use the service.
+        </p>
+        <p>
+          The service is provided by <strong>{site.placeholders.legalEntity}</strong>, registered at{" "}
+          <strong>{site.placeholders.address}</strong>.
+        </p>
+
+        <h2 id="service">2. The service</h2>
+        <p>
+          {site.name} provides general nutrition information, personalised meal plans, recipe
+          suggestions, food logging, nutrition tracking and progress views. Features may be added,
+          changed or withdrawn, and some features shown on this website may not be available in your
+          version yet.
+        </p>
+        <p>
+          This website is informational. Statements about availability of the Android app or the web
+          app reflect the state at the time of publication; where a link does not exist it is
+          intentionally disabled.
+        </p>
+
+        <h2 id="medical">3. Medical disclaimer</h2>
+        <p>{medicalDisclaimer}</p>
+        <p>
+          Always consult a qualified healthcare professional before changing your diet, especially if
+          you are pregnant, breastfeeding, managing a chronic condition such as diabetes, or taking
+          medication. Do not disregard professional medical advice because of something you read in
+          the app or on this site.
+        </p>
+        <p>
+          If you think you are experiencing a medical emergency, contact your local emergency services
+          immediately. {site.name} is not an emergency service.
+        </p>
+
+        <h2 id="account">4. Your account</h2>
+        <ul>
+          <li>You are responsible for the accuracy of the information you enter.</li>
+          <li>Keep your account credentials confidential and tell us about unauthorised use.</li>
+          <li>The service is not intended for children; the minimum age is <strong>[confirm]</strong>.</li>
+        </ul>
+
+        <h2 id="acceptable-use">5. Acceptable use</h2>
+        <p>You agree not to:</p>
+        <ul>
+          <li>use the service unlawfully, or to infringe anyone else’s rights;</li>
+          <li>attempt to access accounts, systems or data that are not yours;</li>
+          <li>
+            scrape, copy, resell or bulk-extract the recipe, food or nutrition database, or use it to
+            build a competing dataset;
+          </li>
+          <li>interfere with the service, including by introducing malware or overloading it;</li>
+          <li>misrepresent the service’s output as personalised medical or clinical advice.</li>
+        </ul>
+
+        <h2 id="content">6. Recipes and content</h2>
+        <p>
+          Recipes, videos, articles and images published by {site.name} are for personal,
+          non-commercial use. You may cook from them, save them and share links. You may not
+          republish them commercially, or present them as your own, without written permission.
+        </p>
+        <p>
+          Nutrition figures are estimates. They depend on the ingredients, brands and portion sizes
+          actually used, so treat them as a guide rather than an exact measurement.
+        </p>
+
+        <h2 id="third-parties">7. Third-party services</h2>
+        <p>
+          The app may link to or rely on third-party services — app stores, platform health services
+          such as Health Connect, hosting providers and food or barcode data sources. Those services
+          have their own terms and privacy policies, and we are not responsible for them.
+        </p>
+
+        <h2 id="availability">8. Availability</h2>
+        <p>
+          We aim to keep the service available, but we do not promise uninterrupted or error-free
+          operation. Maintenance, updates, third-party outages and events outside our control may
+          interrupt it. The web app and Android app may be released at different times.
+        </p>
+
+        <h2 id="ip">9. Intellectual property</h2>
+        <p>
+          The {site.name} name, logo, wordmark, design and the content we publish belong to{" "}
+          <strong>{site.placeholders.legalEntity}</strong> or its licensors. These terms do not grant
+          you any right to use our branding.
+        </p>
+
+        <h2 id="liability">10. Disclaimers and limitation of liability</h2>
+        <p>
+          The service is provided “as is” and “as available”, without warranties of any kind, whether
+          express or implied, to the fullest extent permitted by law.
+        </p>
+        <p>
+          To the fullest extent permitted by law, we are not liable for indirect, incidental, special,
+          consequential or punitive damages, or for any loss of data, profits or goodwill arising from
+          your use of the service. Nothing in these terms limits liability that cannot lawfully be
+          limited.
+        </p>
+        <p>
+          <strong>[Confirm the liability position and any consumer-law carve-outs with a qualified
+          adviser for the jurisdictions you operate in.]</strong>
+        </p>
+
+        <h2 id="termination">11. Termination</h2>
+        <p>
+          You may stop using the service and delete your account at any time — see{" "}
+          <a href="/privacy#deletion">the deletion section of the privacy policy</a>. We may suspend
+          or terminate access if these terms are materially breached or if we are required to by law.
+        </p>
+
+        <h2 id="law">12. Governing law</h2>
+        <p>
+          These terms are governed by the laws of <strong>{site.placeholders.jurisdiction}</strong>,
+          and the courts of that jurisdiction have exclusive jurisdiction over any dispute.
+        </p>
+
+        <h2 id="changes">13. Changes to these terms</h2>
+        <p>
+          We may update these terms as the service changes. The effective date above will be revised,
+          and material changes will be communicated in the app. Continuing to use the service after a
+          change means you accept the updated terms.
+        </p>
+
+        <h2 id="contact">14. Contact</h2>
+        <p>
+          Questions about these terms:
+          {hasEmail ? (
+            <>
+              {" "}
+              email <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+            </>
+          ) : (
+            " use the contact channels listed on the Contact page."
+          )}
+        </p>
+      </div>
+
+      <div class="cluster mt-2xl">
+        <Button href="/privacy" icon="shield">Read the Privacy Policy</Button>
+        <Button href="/contact" variant="secondary">Contact us</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

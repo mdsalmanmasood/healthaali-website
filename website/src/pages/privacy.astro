@@ -1,0 +1,280 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+
+import { medicalDisclaimer } from "../data/features";
+import { contactEmail, site, siteUrl } from "../data/site";
+
+const hasEmail = contactEmail.length > 0;
+
+const sections = [
+  { id: "collect", label: "What we collect" },
+  { id: "use", label: "How we use it" },
+  { id: "storage", label: "Where it is stored" },
+  { id: "security", label: "Security" },
+  { id: "third-parties", label: "Third-party services" },
+  { id: "cookies", label: "Cookies" },
+  { id: "retention", label: "How long we keep it" },
+  { id: "deletion", label: "Deleting your account" },
+  { id: "choices", label: "Your choices" },
+  { id: "children", label: "Children" },
+  { id: "changes", label: "Changes" },
+  { id: "contact", label: "Contact" },
+];
+---
+
+<BaseLayout
+  title="HealThaali Privacy Policy"
+  description="How HealThaali handles your information: what the app collects, how it is used, where it is stored, how long it is kept and how to delete your account."
+>
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Legal
+      </p>
+      <h1 class="page-hero__title">Privacy Policy</h1>
+      <p class="page-hero__lead">
+        This policy explains what {site.name} collects, why, where it is stored and what control you
+        have — including how to delete your account and its data.
+      </p>
+      {/*
+        Development placeholder. The brief for this project is explicit: do not make
+        unsupported legal or security claims. Everything below that cannot be verified
+        against the real backend is marked as a placeholder to confirm before launch.
+      */}
+      <div class="callout mt-xl">
+        <Icon name="info" size={20} />
+        <span>
+          <span class="callout__title">Pre-launch draft — verify before publishing</span>
+          Items in square brackets are placeholders that must be confirmed against the real backend
+          and reviewed by whoever is responsible for compliance. Effective date:{" "}
+          <strong>{site.placeholders.effectiveDate}</strong>.
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-label="Privacy policy contents">
+    <div class="container">
+      <nav class="anchor-nav mb-2xl" aria-label="Sections of this policy">
+        {
+          sections.map((section) => (
+            <a class="chip" href={`#${section.id}`}>
+              {section.label}
+            </a>
+          ))
+        }
+      </nav>
+
+      <div class="prose">
+        <p>
+          This policy applies to the {site.name} Android application and to this website
+          (<strong>{siteUrl.replace(/^https?:\/\//, "")}</strong>). It does not apply to websites or
+          apps we link to.
+        </p>
+
+        <h2 id="collect">1. What we collect</h2>
+        <p>
+          To personalise your plan, {site.name} collects the information you enter into it. Based on
+          the product itself, that means:
+        </p>
+        <ul>
+          <li>
+            <strong>Profile and account details</strong> — name, age, gender, height, weight, goal
+            weight and the goal you select (for example weight loss).
+          </li>
+          <li>
+            <strong>Health-related information you choose to enter</strong> — for example a
+            self-reported health condition such as type 2 diabetes, recorded so suggestions can
+            respect it.
+          </li>
+          <li>
+            <strong>Food preferences and lifestyle</strong> — for example Indian, low oil, high
+            protein, spicy, and your activity level.
+          </li>
+          <li>
+            <strong>Food and nutrition activity</strong> — meals planned and logged, foods searched,
+            scanned or entered manually, and the nutrition totals that follow.
+          </li>
+          <li>
+            <strong>Progress data</strong> — weight entries and the trend derived from them.
+          </li>
+          <li>
+            <strong>Food Memory</strong> — the derived summary of what you often enjoy, prefer,
+            avoid and eat most frequently.
+          </li>
+          <li>
+            <strong>Images you scan</strong> — if you use photo scanning, the image is used to
+            identify the food. Retention: <strong>[confirm whether images are stored or processed
+            and discarded]</strong>.
+          </li>
+          <li>
+            <strong>Technical data</strong> — minimal device and app information needed to operate
+            and secure the service. Exact fields: <strong>[confirm]</strong>.
+          </li>
+        </ul>
+        <p>
+          This website does not ask you to enter health information. It has no accounts, and — unless
+          an analytics identifier is configured in the deployment — it sets no analytics cookies.
+        </p>
+
+        <h2 id="use">2. How we use it</h2>
+        <ul>
+          <li>To generate and personalise your meal plan, recipes and nutrition targets.</li>
+          <li>To calculate the nutrition totals shown on your dashboard and in your reports.</li>
+          <li>
+            To power HealThaali AI suggestions, which consider your profile, your preferences and what
+            you have already eaten that day.
+          </li>
+          <li>To show your progress over time.</li>
+          <li>To send reminders and notifications you have enabled.</li>
+          <li>
+            To operate, secure, debug and improve the service — for example diagnosing a fault or
+            understanding which screens are hard to use.
+          </li>
+          <li>To respond when you contact us.</li>
+        </ul>
+        <p>
+          We do not sell personal information. <strong>[Confirm this statement against actual
+          practice, including any advertising or data-sharing arrangements, before publishing.]</strong>
+        </p>
+
+        <h2 id="storage">3. Where it is stored</h2>
+        <p>
+          Application data is stored in the backend that serves the app. Hosting provider, storage
+          location and any cross-border transfer arrangements:{" "}
+          <strong>[confirm provider and regions]</strong>.
+        </p>
+        <p>
+          This marketing website is served as static files. Your theme preference (light, dark or
+          system) is stored only in your own browser under the key{" "}
+          <code>healthaali-theme</code>, and is never transmitted.
+        </p>
+
+        <h2 id="security">4. Security</h2>
+        <p>
+          We take reasonable technical and organisational measures to protect your information,
+          including access controls and encryption of data in transit. No method of transmission or
+          storage is completely secure, and we cannot guarantee absolute security.
+        </p>
+        <p>
+          <strong>[Insert the specific measures your backend actually implements — encryption at
+          rest, access control model, logging, backup policy — or remove this paragraph.]</strong> We
+          deliberately avoid certification claims (ISO, HIPAA, “bank-grade”, and similar) that have
+          not been independently verified.
+        </p>
+
+        <h2 id="third-parties">5. Third-party services</h2>
+        <p>
+          Some functionality relies on third parties — for example hosting, authentication, barcode
+          or food-database lookups, and platform services such as Android Health Connect. These
+          providers process data on our instructions or as independent controllers under their own
+          terms.
+        </p>
+        <p>
+          The current list of sub-processors, and what each one receives:{" "}
+          <strong>[list providers and their roles]</strong>.
+        </p>
+        <p>
+          Health Connect is optional. If you do not connect it, no data is read from or written to it.
+        </p>
+
+        <h2 id="cookies">6. Cookies and local storage</h2>
+        <p>
+          This website does not use advertising or tracking cookies. It stores your colour-theme
+          choice in your browser’s local storage so the site does not flash the wrong theme on every
+          visit. Clearing site data removes it.
+        </p>
+        <p>
+          If privacy-friendly analytics is enabled for a deployment, it is configured to run without
+          third-party cookies. Which analytics, if any, is enabled:{" "}
+          <strong>[confirm per deployment]</strong>.
+        </p>
+
+        <h2 id="retention">7. How long we keep it</h2>
+        <p>
+          We keep your information for as long as your account exists and for as long afterwards as
+          is needed to meet legal, accounting or security obligations. Specific retention periods:{" "}
+          <strong>[define per data category]</strong>.
+        </p>
+
+        <h2 id="deletion">8. Deleting your account and your data</h2>
+        <p>
+          {site.name} provides a documented route to delete your account and the data attached to it.
+          In the app this sits under <strong>Settings → Data &amp; Privacy</strong>.
+        </p>
+        <ul>
+          <li>
+            Deleting your account deletes your profile, health information, preferences, plan, logs,
+            progress entries and Food Memory.
+          </li>
+          <li>
+            Backups may retain a copy for a limited period before being overwritten:{" "}
+            <strong>[confirm backup retention]</strong>.
+          </li>
+          <li>
+            If you cannot access the app, you can request deletion by email
+            {hasEmail ? ` at ${contactEmail}` : " using the contact channels on the Contact page"}.
+          </li>
+        </ul>
+
+        <h2 id="choices">9. Your choices</h2>
+        <ul>
+          <li>Edit or clear your profile and preferences at any time in the app.</li>
+          <li>Turn reminders and Health Connect off in Settings.</li>
+          <li>Clear the website theme preference by clearing your browser site data.</li>
+          <li>
+            Depending on where you live, you may have additional rights — access, correction,
+            deletion, portability, objection, or withdrawal of consent. How to exercise them:{" "}
+            <strong>[insert the applicable jurisdiction and process]</strong>.
+          </li>
+        </ul>
+
+        <h2 id="children">10. Children</h2>
+        <p>
+          {site.name} is not directed at children and is not intended for use by anyone under the age
+          at which they can consent to data processing in their jurisdiction. Age threshold for your
+          region: <strong>[confirm]</strong>. If you believe a child has provided us with personal
+          information, contact us and we will delete it.
+        </p>
+
+        <h2 id="changes">11. Changes to this policy</h2>
+        <p>
+          We will update this page when our practices change and revise the effective date above.
+          Material changes will be communicated in the app.
+        </p>
+
+        <h2 id="contact">12. Contact</h2>
+        <p>
+          Questions about this policy or your data:
+          {hasEmail ? (
+            <>
+              {" "}
+              email <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+            </>
+          ) : (
+            " use the contact channels listed on the Contact page."
+          )}
+        </p>
+        <p>
+          Data controller: <strong>{site.placeholders.legalEntity}</strong> ·
+          {" "}<strong>{site.placeholders.address}</strong>
+        </p>
+
+        <hr />
+
+        <h2 id="medical">Medical disclaimer</h2>
+        <p>{medicalDisclaimer}</p>
+      </div>
+
+      <div class="cluster mt-2xl">
+        <Button href="/contact" icon="arrowRight" iconPosition="end">
+          Contact us about privacy
+        </Button>
+        <Button href="/terms" variant="secondary">Read the Terms of Service</Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

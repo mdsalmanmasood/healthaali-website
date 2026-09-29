@@ -1,0 +1,35 @@
+---
+import { Image } from "astro:assets";
+import logoMark from "../assets/brand/logo-mark.png";
+import { site } from "../data/site";
+
+interface Props {
+  /** Rendered height of the monogram in px. */
+  height?: number;
+  /** Show the wordmark + tagline next to the monogram. */
+  showText?: boolean;
+  class?: string;
+}
+
+const { height = 34, showText = true, class: className = "" } = Astro.props;
+---
+
+<span class:list={["brand-lockup", className]}>
+  <Image
+    src={logoMark}
+    alt=""
+    class="brand__mark"
+    height={height}
+    width={Math.round((height * 640) / 626)}
+    loading="eager"
+    decoding="async"
+  />
+  {
+    showText && (
+      <span class="brand__text">
+        <span class="brand__name">{site.name}</span>
+        <span class="brand__tag">{site.tagline}</span>
+      </span>
+    )
+  }
+</span>

@@ -1,0 +1,51 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+import { mainNav, secondaryNav } from "../data/navigation";
+
+const suggestions = [...mainNav, ...secondaryNav];
+---
+
+<BaseLayout
+  title="Page not found"
+  description="This page could not be found on the HealThaali website. Jump back to the homepage, or head straight to features, the Android app or contact."
+  noindex={true}
+>
+  <section class="container">
+    <div class="error-page">
+      <p class="error-page__code">404</p>
+
+      <h1>This page couldn't be found</h1>
+
+      <p class="page-hero__lead">
+        The link may be out of date, or the page may have moved. Nothing is broken on your side —
+        the address just does not match anything here.
+      </p>
+
+      <div class="page-hero__actions">
+        <Button href="/" size="lg" icon="arrowRight" iconPosition="end">Go home</Button>
+        <Button href="/features" variant="secondary" size="lg" icon="list">
+          Browse features
+        </Button>
+      </div>
+
+      <div class="mt-2xl">
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          Popular pages
+        </p>
+        <nav class="anchor-nav mt-lg" aria-label="Suggested pages">
+          {
+            suggestions.map((item) => (
+              <a class="chip chip--brand" href={item.href}>
+                <Icon name="arrowRight" size={14} />
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

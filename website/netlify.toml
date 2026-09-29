@@ -1,0 +1,26 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HealThaali — Netlify configuration
+#
+# The site is fully static, so this file only pins the build and tells Netlify
+# where the output lives. Security and cache headers are NOT repeated here: they
+# live in `public/_headers`, which Netlify reads from the publish root and which
+# Cloudflare Pages reads too. Keeping one copy avoids the two drifting apart.
+#
+# 404 handling needs no configuration — `dist/404.html` is generated from
+# src/pages/404.astro and both hosts serve it for unknown paths automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Astro 7 requires Node 20+. Pin it so the Netlify image never drifts.
+  NODE_VERSION = "22"
+
+# Astro's dev/preview servers are irrelevant here, but an accidental local
+# `netlify dev` on the wrong port is a common surprise — state it explicitly.
+[dev]
+  command = "npm run dev"
+  targetPort = 4321
+  port = 8888

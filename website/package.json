@@ -1,0 +1,27 @@
+{
+  "name": "healthaali-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Official HealThaali website — personalized healthy-eating and nutrition companion (Astro, static-first).",
+  "scripts": {
+    "dev": "astro dev",
+    "dev:force": "astro dev --force",
+    "dev:stop": "astro dev stop",
+    "preview:stop": "astro preview stop",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "assets": "node scripts/extract-assets.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.3.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "sharp": "^0.35.5",
+    "typescript": "^6.0.3"
+  }
+}

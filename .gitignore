@@ -1,0 +1,19 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HealThaali — repository root
+#
+# The Astro website lives in ./website and is the only thing this repository
+# tracks. Everything at this outer level is source material that must NOT be
+# committed: the raw brand asset drop (huge, contains its own node_modules) and
+# local tooling state.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Outer source material / local tooling
+/asset/
+/.freebuff/
+/HealthAali_Astro_Website_Build_Guide.md
+
+# Operating system cruft
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~

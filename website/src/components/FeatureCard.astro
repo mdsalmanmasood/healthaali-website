@@ -1,0 +1,40 @@
+---
+import Icon from "./Icon.astro";
+import type { IconName } from "../lib/icons";
+
+interface Props {
+  icon: IconName;
+  title: string;
+  description: string;
+  accent?: boolean;
+  href?: string;
+  linkLabel?: string;
+  as?: "li" | "div" | "article";
+}
+
+const {
+  icon,
+  title,
+  description,
+  accent = false,
+  href,
+  linkLabel = "Learn more",
+  as: Tag = "li",
+} = Astro.props;
+---
+
+<Tag class:list={["feature-card", accent && "feature-card--accent"]}>
+  <span class="feature-card__icon">
+    <Icon name={icon} size={22} />
+  </span>
+  <h3 class="feature-card__title">{title}</h3>
+  <p class="feature-card__text">{description}</p>
+  {
+    href && (
+      <a class="feature-card__link" href={href}>
+        {linkLabel}
+        <Icon name="arrowRight" size={16} />
+      </a>
+    )
+  }
+</Tag>

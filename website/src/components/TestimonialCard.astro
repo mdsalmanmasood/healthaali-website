@@ -1,0 +1,19 @@
+---
+import type { Testimonial } from "../data/testimonials";
+
+interface Props {
+  testimonial: Testimonial;
+}
+
+const { testimonial } = Astro.props;
+---
+
+<li class="card testimonial">
+  <blockquote class="testimonial__quote">
+    <p>{testimonial.quote}</p>
+  </blockquote>
+  <footer class="testimonial__meta">
+    <span class="testimonial__author">{testimonial.author}</span>
+    {testimonial.meta && <span class="testimonial__context">{testimonial.meta}</span>}
+  </footer>
+</li>

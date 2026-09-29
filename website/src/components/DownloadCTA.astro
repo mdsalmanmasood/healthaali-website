@@ -1,0 +1,56 @@
+---
+import Button from "./Button.astro";
+import { androidUrl, hasAndroidApp, hasWebApp, site, webAppUrl } from "../data/site";
+
+interface Props {
+  title?: string;
+  text?: string;
+  class?: string;
+}
+
+const {
+  title = "Eat better without leaving home food behind",
+  text = "Start with today's meals, log what you actually ate, and let HealThaali keep the nutrition and the progress in view.",
+  class: className = "",
+} = Astro.props;
+---
+
+<section class:list={["section", className]} aria-labelledby="download-cta-title">
+  <div class="container">
+    <div class="cta-band">
+      <h2 class="cta-band__title" id="download-cta-title">{title}</h2>
+      <p class="cta-band__text">{text}</p>
+
+      <div class="cta-band__actions">
+        {
+          hasWebApp ? (
+            <Button href={webAppUrl} variant="secondary" size="lg" external icon="globe">
+              Open the Web App
+            </Button>
+          ) : (
+            <Button variant="secondary" size="lg" icon="globe" disabled>
+              Web app — coming soon
+            </Button>
+          )
+        }
+
+        {
+          hasAndroidApp ? (
+            <Button href={androidUrl} variant="ghost" size="lg" external icon="smartphone">
+              Get it on Google Play
+            </Button>
+          ) : (
+            <Button variant="ghost" size="lg" icon="smartphone" disabled>
+              Android app — coming soon
+            </Button>
+          )
+        }
+      </div>
+
+      <p class="cta-band__note">
+        {site.name} is in active development. Links go live the moment the app is published —
+        until then these buttons are switched off on purpose rather than pointing at a placeholder.
+      </p>
+    </div>
+  </div>
+</section>

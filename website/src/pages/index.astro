@@ -1,0 +1,441 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import AppScreenshot from "../components/AppScreenshot.astro";
+import Button from "../components/Button.astro";
+import DownloadCTA from "../components/DownloadCTA.astro";
+import FAQ from "../components/FAQ.astro";
+import FeatureCard from "../components/FeatureCard.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import TestimonialCard from "../components/TestimonialCard.astro";
+
+import { faq } from "../data/faq";
+import { medicalDisclaimer, pillars } from "../data/features";
+import { cardScreens, phoneScreens } from "../data/screenshots";
+import { hasAndroidApp, site, siteUrl } from "../data/site";
+import { testimonials } from "../data/testimonials";
+
+const promises = [
+  { icon: "droplet", label: "Zero-oil recipes" },
+  { icon: "scale", label: "Weight loss" },
+  { icon: "heart", label: "Healthy lifestyle" },
+  { icon: "leaf", label: "Better you" },
+] as const;
+
+const steps = [
+  {
+    title: "Tell HealThaali about you",
+    text: "Age, height, weight, goal and any health conditions, plus the food you like — Indian, low oil, high protein, spicy.",
+  },
+  {
+    title: "Get a plan, not a list",
+    text: "Breakfast, lunch, dinner and snacks arrive already counted for calories, protein, carbs, fat and fibre.",
+  },
+  {
+    title: "Log it, or just cook it",
+    text: "Search, scan or use a barcode to log a meal; open a recipe and follow it step by step in the kitchen.",
+  },
+  {
+    title: "Watch the trend",
+    text: "Weight, nutrition and habits over a month, three months, six months or a year — start, current and goal in view.",
+  },
+];
+
+const softwareApplication = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: site.name,
+  url: `${siteUrl}/`,
+  description: site.description,
+  applicationCategory: "HealthApplication",
+  operatingSystem: "Android, Web",
+  inLanguage: "en",
+};
+---
+
+<BaseLayout
+  title="HealThaali — Healthy Food, Happier You"
+  description="A personalized nutrition companion for home-cooked Indian food — meal plans, nutrition tracking and zero-oil recipes that fit into a normal week."
+>
+  <Fragment slot="head">
+    <JsonLd data={softwareApplication} />
+  </Fragment>
+
+  <!-- ================= Hero ================= -->
+  <section class="hero">
+    <div class="container hero__inner">
+      <div>
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          {site.positioning}
+        </p>
+
+        <h1 class="hero__title mt-lg">
+          Your health, organized around the food you <em>actually eat</em>.
+        </h1>
+
+        <p class="hero__lead">
+          HealThaali plans personalized meals from everyday Indian home cooking, tracks the
+          protein, carbs, fat and fibre for you, and suggests the next better choice — so eating
+          well fits into a normal week instead of replacing it.
+        </p>
+
+        <div class="hero__actions">
+          <Button href="/android" size="lg" icon="smartphone">
+            Explore the Android app
+          </Button>
+          <Button href="/features" variant="secondary" size="lg" icon="arrowRight" iconPosition="end">
+            See what's inside
+          </Button>
+        </div>
+
+        {!hasAndroidApp && (
+          <p class="apk-size">
+            Google Play listing is not live yet — the Android page shows the real app screens and
+            switches on the link as soon as it is published.
+          </p>
+        )}
+
+        <div class="hero__meta">
+          <ul class="value-strip">
+            {
+              promises.map((promise) => (
+                <li class="value-strip__item">
+                  <span class="value-strip__icon">
+                    <Icon name={promise.icon} size={18} />
+                  </span>
+                  {promise.label}
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+
+      <div class="hero__visual">
+        <div class="device-duo">
+          <span class="device-duo__glow" aria-hidden="true"></span>
+          <AppScreenshot
+            src={phoneScreens.dashboard.src}
+            alt={phoneScreens.dashboard.alt}
+            device="phone"
+            priority
+            class="phone--primary"
+          />
+          <AppScreenshot
+            src={phoneScreens.mealPlan.src}
+            alt={phoneScreens.mealPlan.alt}
+            device="phone"
+            class="phone--secondary"
+          />
+        </div>
+
+        <p class="float-card float-card--a">
+          <Icon name="sparkles" size={16} />
+          <span>
+            <span class="float-card__value">32 / 100 g</span>
+            <br />protein today
+          </span>
+        </p>
+        <p class="float-card float-card--b">
+          <Icon name="flame" size={16} />
+          <span>
+            <span class="float-card__value">Zero oil</span>
+            <br />cooking technique
+          </span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Setup rail ================= -->
+  <section class="section--tight" aria-labelledby="setup-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Three minutes of setup"
+        eyebrowIcon="user"
+        title="One short profile, then the app adapts"
+        lead="No thirty-question quiz. HealThaali asks for what it needs to personalise your food, and Food Memory keeps learning from there."
+        id="setup-title"
+      />
+
+      <div class="screen-rail mt-2xl">
+        {
+          [phoneScreens.welcome, phoneScreens.createProfile, phoneScreens.profileSetup].map(
+            (screen) => (
+              <AppScreenshot
+                src={screen.src}
+                alt={screen.alt}
+                caption={screen.caption}
+                device="phone"
+              />
+            )
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Pillars ================= -->
+  <section class="section section--alt" aria-labelledby="pillars-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Record. Remember. Reason. Reshape."
+        eyebrowIcon="chart"
+        title="What HealThaali actually does"
+        lead="Seven things, done properly — instead of forty features nobody opens twice."
+        align="center"
+        id="pillars-title"
+      />
+
+      <ul class="card-grid card-grid--3 mt-2xl list-reset">
+        {pillars.map((feature) => <FeatureCard {...feature} />)}
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= Logging ================= -->
+  <section class="section" aria-labelledby="logging-title">
+    <div class="container split">
+      <div>
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true" />
+          Logging without friction
+        </p>
+        <h2 class="split__title" id="logging-title">Logging a meal takes seconds, not minutes</h2>
+        <p class="split__text">
+          Type a food or recipe, pick from what you ate recently or favourited, point the camera at
+          a plate, or scan a barcode. Every entry lands straight in the day's nutrition totals, so
+          the numbers stay honest even on a busy day.
+        </p>
+        <ul class="check-list">
+          <li>
+            <Icon name="check" size={20} />
+            <span>Search across foods and HealThaali recipes</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Recent, favourites, scan and custom entry modes</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Portion-aware entries — one cup, one egg, one medium, one piece</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="split__media grid grid-2">
+        <AppScreenshot
+          src={cardScreens.foodLog.src}
+          alt={cardScreens.foodLog.alt}
+          caption={cardScreens.foodLog.caption}
+          device="screen"
+        />
+        <AppScreenshot
+          src={cardScreens.scanFood.src}
+          alt={cardScreens.scanFood.alt}
+          caption={cardScreens.scanFood.caption}
+          device="screen"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= AI ================= -->
+  <section class="section section--alt" aria-labelledby="ai-title">
+    <div class="container split split--reverse">
+      <div>
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true" />
+          HealThaali AI
+        </p>
+        <h2 class="split__title" id="ai-title">Advice that reads today, not a generic article</h2>
+        <p class="split__text">
+          The assistant compares what you have already eaten with your profile and preferences, then
+          offers something you can act on straight away — a higher-protein dinner, a low-carb tea
+          option, a zero-oil version of a dish you order often.
+        </p>
+        <ul class="check-list">
+          <li>
+            <Icon name="check" size={20} />
+            <span>Balances the rest of the day instead of scoring the past</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Speaks in dishes, not abstractions</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Gets sharper as Food Memory learns what you like</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="split__media">
+        <AppScreenshot
+          src={cardScreens.aiSuggestions.src}
+          alt={cardScreens.aiSuggestions.alt}
+          caption={cardScreens.aiSuggestions.caption}
+          device="screen"
+          class="mx-auto"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Progress + memory ================= -->
+  <section class="section" aria-labelledby="progress-title">
+    <div class="container split">
+      <div>
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true" />
+          Progress over perfection
+        </p>
+        <h2 class="split__title" id="progress-title">Watch the trend, not one bad day</h2>
+        <p class="split__text">
+          Your Progress keeps the weight line, the nutrition history and your habits in one view,
+          with start, current and goal always visible. Food Memory sits alongside it, summarising
+          what you enjoy, prefer and avoid — in plain language you can correct.
+        </p>
+        <ul class="check-list">
+          <li>
+            <Icon name="check" size={20} />
+            <span>1M, 3M, 6M and 1Y ranges for weight, nutrition and habits</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Goal weight called out against where you started</span>
+          </li>
+          <li>
+            <Icon name="check" size={20} />
+            <span>Editable preferences — the model follows you, not the other way round</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="split__media grid grid-2">
+        <AppScreenshot
+          src={cardScreens.progress.src}
+          alt={cardScreens.progress.alt}
+          caption={cardScreens.progress.caption}
+          device="screen"
+        />
+        <AppScreenshot
+          src={cardScreens.foodMemory.src}
+          alt={cardScreens.foodMemory.alt}
+          caption={cardScreens.foodMemory.caption}
+          device="screen"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= Testimonials (only when real quotes exist) ================= -->
+  {
+    testimonials.length > 0 && (
+      <section class="section section--alt" aria-labelledby="reviews-title">
+        <div class="container">
+          <SectionHeading
+            eyebrow="From people using it"
+            title="Reviews"
+            align="center"
+            id="reviews-title"
+          />
+          <ul class="card-grid card-grid--3 mt-2xl list-reset">
+            {testimonials.map((testimonial) => (
+              <TestimonialCard testimonial={testimonial} />
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ================= Privacy ================= -->
+  <section class="section section--alt" aria-labelledby="privacy-title">
+    <div class="container split">
+      <div>
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true" />
+          Privacy
+        </p>
+        <h2 class="split__title" id="privacy-title">Health data is personal. It gets its own screen.</h2>
+        <p class="split__text">
+          Data &amp; Privacy sits in Settings next to Health Profile and Notifications — where you
+          would actually look for it. The privacy policy sets out what is collected, why, where it is
+          stored, how long it is kept and how to delete your account.
+        </p>
+
+        <div class="callout callout--brand mt-lg">
+          <Icon name="info" size={20} />
+          <span>
+            <span class="callout__title">Health information, not medical advice</span>
+            {medicalDisclaimer}
+          </span>
+        </div>
+
+        <div class="cluster mt-xl">
+          <Button href="/privacy" variant="secondary" icon="shield">
+            Read the privacy policy
+          </Button>
+        </div>
+      </div>
+
+      <div class="split__media">
+        <AppScreenshot
+          src={cardScreens.settings.src}
+          alt={cardScreens.settings.alt}
+          caption={cardScreens.settings.caption}
+          device="screen"
+          class="mx-auto"
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= How it works ================= -->
+  <section class="section" aria-labelledby="how-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="How it works"
+        eyebrowIcon="list"
+        title="Four steps, repeated until they stop feeling like effort"
+        align="center"
+        id="how-title"
+      />
+
+      <ol class="steps mt-2xl list-reset">
+        {
+          steps.map((step, index) => (
+            <li class="step">
+              <span class="step__number" aria-hidden="true">
+                {index + 1}
+              </span>
+              <h3 class="step__title">{step.title}</h3>
+              <p class="step__text">{step.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section class="section section--alt" aria-labelledby="faq-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Questions"
+        eyebrowIcon="info"
+        title="Things people ask before they start"
+        align="center"
+        id="faq-title"
+      />
+      <div class="container--narrow mt-2xl">
+        <FAQ items={faq} />
+      </div>
+    </div>
+  </section>
+
+  <DownloadCTA />
+</BaseLayout>

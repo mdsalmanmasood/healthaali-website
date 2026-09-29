@@ -1,0 +1,133 @@
+---
+import Button from "./Button.astro";
+import Icon from "./Icon.astro";
+import Logo from "./Logo.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+import { mobileNav } from "../data/navigation";
+import { androidUrl, hasAndroidApp, hasWebApp, site, webAppUrl } from "../data/site";
+
+const path = Astro.url.pathname;
+const isCurrent = (href: string) => path === href || (href !== "/" && path.startsWith(`${href}/`));
+---
+
+<div
+  class="mobile-menu"
+  id="mobile-menu"
+  data-menu-panel
+  data-open="false"
+  role="dialog"
+  aria-modal="true"
+  aria-label={`${site.name} navigation`}
+>
+  <div class="mobile-menu__top container">
+    <a class="brand" href="/" aria-label={`${site.name} home`}>
+      <Logo height={30} showText={false} />
+    </a>
+    <button class="menu-toggle" type="button" data-menu-close aria-label="Close navigation menu">
+      <Icon name="close" size={20} />
+    </button>
+  </div>
+
+  <div class="mobile-menu__body container">
+    <nav aria-label="Site">
+      <ul class="mobile-menu__list">
+        {
+          mobileNav.map((item) => (
+            <li>
+              <a
+                class="mobile-menu__link"
+                href={item.href}
+                aria-current={isCurrent(item.href) ? "page" : undefined}
+              >
+                <span>
+                  {item.label}
+                  {item.hint && <span class="mobile-menu__hint">{item.hint}</span>}
+                </span>
+                <Icon name="arrowRight" size={18} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="mobile-menu__actions">
+      {
+        hasWebApp ? (
+          <Button href={webAppUrl} variant="primary" size="lg" block external icon="globe">
+            Open the Web App
+          </Button>
+        ) : (
+          <Button variant="secondary" size="lg" block icon="globe" disabled>
+            Web app — coming soon
+          </Button>
+        )
+      }
+      {
+        hasAndroidApp ? (
+          <Button href={androidUrl} variant="secondary" size="lg" block external icon="smartphone">
+            Get it on Google Play
+          </Button>
+        ) : (
+          <Button variant="secondary" size="lg" block icon="smartphone" disabled>
+            Android app — coming soon
+          </Button>
+        )
+      }
+    </div>
+
+    <p class="mobile-menu__section-title">Appearance</p>
+    <ThemeToggle />
+  </div>
+</div>
+
+<script>
+  const panel = () => document.querySelector<HTMLElement>("[data-menu-panel]");
+  const toggle = () => document.querySelector<HTMLElement>("[data-menu-toggle]");
+
+  function setMenuOpen(open: boolean, restoreFocus = false) {
+    const el = panel();
+    if (!el) return;
+    el.dataset.open = open ? "true" : "false";
+    document.body.dataset.menuOpen = open ? "true" : "false";
+    toggle()?.setAttribute("aria-expanded", open ? "true" : "false");
+
+    if (open) {
+      el.querySelector<HTMLElement>("a, button")?.focus();
+    } else if (restoreFocus) {
+      toggle()?.focus();
+    }
+  }
+
+  if (!document.documentElement.dataset.menuBound) {
+    document.documentElement.dataset.menuBound = "1";
+
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      if (target.closest("[data-menu-toggle]")) {
+        setMenuOpen(panel()?.dataset.open !== "true");
+        return;
+      }
+
+      if (target.closest("[data-menu-close]")) {
+        setMenuOpen(false, true);
+        return;
+      }
+
+      // Any in-panel link closes the sheet before navigating.
+      if (target.closest("[data-menu-panel] a")) {
+        setMenuOpen(false);
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && panel()?.dataset.open === "true") {
+        setMenuOpen(false, true);
+      }
+    });
+
+    document.addEventListener("astro:page-load", () => setMenuOpen(false));
+  }
+</script>
