@@ -1,0 +1,160 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HealThaali — live site probe
+#
+# Every six hours, ask the real site over the real internet whether it is up.
+#
+# Why this is separate from ci.yml
+# --------------------------------
+# `ci.yml` proves the *build* is correct. This proves the *deployment* is: DNS
+# still lands on Cloudflare Pages, every page a visitor actually arrives at
+# returns 200, and the certificate has runway left instead of days.
+#
+# That is also why this job checks out nothing and installs nothing. A monitor
+# that shares its fate with the code it monitors cannot report anything: if the
+# lockfile breaks or a dependency is pulled, this still answers "is the site
+# serving?" rather than failing for an unrelated reason.
+#
+# It does not crawl. Four URLs, once per run, one request each — enough to
+# notice an outage, nowhere near enough to look like traffic.
+#
+# Until the domain is attached to the Pages project this job fails, and that is
+# the correct outcome: "healthaali.in does not answer" is precisely the
+# condition it exists to report.
+#
+# Caveats worth knowing
+# ---------------------
+#   - GitHub disables scheduled workflows in repositories with no activity for
+#     60 days; any commit resets that clock. `workflow_dispatch` runs it by
+#     hand at any time.
+#   - Scheduled runs only fire on the default branch and can be delayed at
+#     times of high load.
+#   - GitHub emails the repository owner when a scheduled run fails. If that
+#     becomes noise, drop `PATHS` to `/` — but silence is what a monitor is
+#     supposed to break.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Uptime
+
+on:
+  schedule:
+    # Every six hours, at :17. The odd minute keeps this out of the top-of-hour
+    # pile-up when scheduled workflows everywhere fire at once.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+# Never overlap with itself; a queued probe is harmless, a cancelled one is a
+# missed outage.
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+# Nothing here writes to the repository.
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe the live site
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      SITE: https://healthaali.in
+      # One path per line, each resolved against SITE. Kept short on purpose:
+      # this is an uptime check, not a crawler. Whole-site coverage lives in
+      # `npm run check:links`, which runs against the build in ci.yml.
+      PATHS: |
+        /
+        /features
+        /recipes
+        /robots.txt
+
+    steps:
+      - name: Every URL answers 200 over HTTPS
+        run: |
+          set -uo pipefail
+
+          failures=0
+
+          {
+            echo "## Live site probe"
+            echo
+            echo "Checked \`$SITE\` at $(date -u '+%Y-%m-%d %H:%M UTC')."
+            echo
+            echo "| Path | Result |"
+            echo "| --- | --- |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          while IFS= read -r path; do
+            [ -n "$path" ] || continue
+            url="${SITE}${path}"
+
+            # `--fail` is deliberately absent: it would swallow the status code
+            # this check exists to report. The code comes from --write-out
+            # instead, and curl's own non-zero exit still catches connection
+            # failures and certificate errors — the other half of a probe.
+            result=$(curl --silent --show-error --location --max-time 20 \
+              --retry 2 --retry-delay 5 --retry-connrefused \
+              --write-out '%{http_code}|%{time_total}' \
+              --output /dev/null "$url" 2>&1)
+            rc=$?
+
+            if [ "$rc" -ne 0 ]; then
+              detail=$(printf '%s' "$result" | tr '\n' ' ' | cut -c1-140)
+              echo "::error::$url — curl exited $rc: $detail"
+              echo "| \`$path\` | ✗ curl exit $rc — $detail |" >> "$GITHUB_STEP_SUMMARY"
+              failures=$((failures + 1))
+              continue
+            fi
+
+            code="${result%%|*}"
+            seconds="${result##*|}"
+
+            if [ "$code" != "200" ]; then
+              echo "::error::$url returned HTTP $code"
+              echo "| \`$path\` | ✗ HTTP $code |" >> "$GITHUB_STEP_SUMMARY"
+              failures=$((failures + 1))
+            else
+              echo "ok: $url → 200 in ${seconds}s"
+              echo "| \`$path\` | ✓ 200 in ${seconds}s |" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done <<< "$PATHS"
+
+          if [ "$failures" -gt 0 ]; then
+            echo "::error::$failures of $(printf '%s' "$PATHS" | grep -c .) probed URLs failed"
+            exit 1
+          fi
+
+      # Runs even when the probe above failed, so a bad page never hides a
+      # certificate that is about to expire.
+      - name: Certificate has runway left
+        if: always()
+        run: |
+          set -euo pipefail
+
+          host=$(printf '%s' "$SITE" | sed -e 's#^https\{0,1\}://##' -e 's#/.*$##')
+
+          end=$(echo | openssl s_client -servername "$host" -connect "$host:443" 2>/dev/null \
+            | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2 || true)
+
+          if [ -z "$end" ]; then
+            echo "::error::no certificate could be read from $host:443"
+            exit 1
+          fi
+
+          days=$(( ( $(date -d "$end" +%s) - $(date +%s) ) / 86400 ))
+
+          {
+            echo "## Certificate"
+            echo
+            echo "\`$host\` expires **$end** (${days} days from now)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "$host certificate expires $end — ${days} days left"
+
+          # Cloudflare renews roughly 30 days out, so a fortnight of runway
+          # means something has stopped working, not that renewal is coming.
+          if [ "$days" -lt 14 ]; then
+            echo "::error::certificate for $host expires in ${days} days"
+            exit 1
+          fi
