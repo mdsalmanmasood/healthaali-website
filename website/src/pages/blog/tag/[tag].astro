@@ -1,0 +1,125 @@
+---
+/**
+ * One page per topic, built from the tags actually in use.
+ *
+ * There is no hand-maintained list of topics: `collectTags` reads the published
+ * posts, so a tag appears when its first post does and disappears when its last
+ * one goes. With no posts this route generates nothing at all, and nothing
+ * links to it.
+ */
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Button from "../../../components/Button.astro";
+import JsonLd from "../../../components/JsonLd.astro";
+import PostCard from "../../../components/PostCard.astro";
+import SectionHeading from "../../../components/SectionHeading.astro";
+import TopicRail from "../../../components/TopicRail.astro";
+
+import { blogPath, collectTags, getPosts, type BlogTag } from "../../../data/blog";
+import { site, siteUrl } from "../../../data/site";
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  const tags = collectTags(posts);
+
+  // Every page receives the full topic list, because each one renders the same rail.
+  return tags.map((tag) => ({
+    params: { tag: tag.slug },
+    props: { tag, tags },
+  }));
+}
+
+interface Props {
+  tag: BlogTag;
+  tags: BlogTag[];
+}
+
+const { tag, tags } = Astro.props;
+
+const url = `${siteUrl}${tag.href}`;
+const count = tag.posts.length;
+const countLabel = `${count} ${count === 1 ? "post" : "posts"}`;
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Blog", item: `${siteUrl}${blogPath}` },
+    { "@type": "ListItem", position: 3, name: tag.name, item: url },
+  ],
+};
+
+/*
+  A CollectionPage rather than a Blog: this is a slice of the blog about one
+  topic, and `isPartOf` says exactly that. The parts are referenced by URL and
+  headline only — the full BlogPosting markup belongs on the posts themselves,
+  and duplicating it here would risk the two disagreeing.
+*/
+const tagSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: `Posts tagged “${tag.name}”`,
+  url,
+  inLanguage: "en",
+  isPartOf: {
+    "@type": "Blog",
+    name: `The ${site.name} blog`,
+    url: `${siteUrl}${blogPath}`,
+  },
+  hasPart: tag.posts.map((post) => ({
+    "@type": "BlogPosting",
+    headline: post.title,
+    url: `${siteUrl}${post.href}`,
+  })),
+};
+---
+
+<BaseLayout
+  title={`Posts tagged “${tag.name}”`}
+  description={`Every ${site.name} post about ${tag.name}, newest first — ${countLabel} so far.`}
+  canonical={tag.href}
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+    <JsonLd data={tagSchema} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        <a class="eyebrow__link" href={blogPath}>Blog</a>
+      </p>
+      <h1 class="page-hero__title">{tag.name}</h1>
+      <p class="page-hero__lead">
+        Everything written about {tag.name}, newest first — {countLabel} so far. Topics come from
+        the tags on each post, so this page is complete by definition rather than by upkeep.
+      </p>
+
+      <div class="mt-2xl">
+        <TopicRail tags={tags} current={tag.slug} />
+      </div>
+    </div>
+  </section>
+
+  <section class="section--tight" aria-labelledby="tag-posts-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow={countLabel}
+        eyebrowIcon="list"
+        title="Newest first"
+        id="tag-posts-title"
+      />
+
+      <ul class="card-grid card-grid--3 mt-2xl list-reset" role="list">
+        {tag.posts.map((post) => <PostCard post={post} />)}
+      </ul>
+
+      <div class="page-hero__actions mt-2xl">
+        <Button href={blogPath} variant="secondary" icon="arrowRight" iconPosition="end">
+          All posts
+        </Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

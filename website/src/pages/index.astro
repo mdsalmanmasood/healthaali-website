@@ -7,11 +7,13 @@ import FAQ from "../components/FAQ.astro";
 import FeatureCard from "../components/FeatureCard.astro";
 import Icon from "../components/Icon.astro";
 import JsonLd from "../components/JsonLd.astro";
+import RecipeCard from "../components/RecipeCard.astro";
 import SectionHeading from "../components/SectionHeading.astro";
 import TestimonialCard from "../components/TestimonialCard.astro";
 
 import { faq } from "../data/faq";
 import { medicalDisclaimer, pillars } from "../data/features";
+import { hasRecipes, latestRecipes, recipes } from "../data/recipes";
 import { cardScreens, phoneScreens } from "../data/screenshots";
 import { hasAndroidApp, site, siteUrl } from "../data/site";
 import { testimonials } from "../data/testimonials";
@@ -347,6 +349,45 @@ const softwareApplication = {
               <TestimonialCard testimonial={testimonial} />
             ))}
           </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <!--
+    ================= Recipes (only when the snapshot has real videos) =================
+
+    Rendered from the generated YouTube snapshot, like the reviews section above:
+    with an empty snapshot this block disappears entirely rather than showing
+    placeholder dishes. Sits on the default background because the `--alt`
+    backgrounds around it are hand-assigned and the conditional reviews section
+    above already makes perfect alternation impossible — the cards carry their
+    own surface, so the band boundary reads correctly either way.
+  -->
+  {
+    hasRecipes && (
+      <section class="section" aria-labelledby="recipes-title">
+        <div class="container">
+          <SectionHeading
+            eyebrow="Recipes"
+            eyebrowIcon="bowl"
+            title="See the dishes being cooked"
+            lead="Every recipe is made on camera, so you can watch the technique instead of taking it on trust."
+            align="center"
+            id="recipes-title"
+          />
+
+          <ul class="card-grid card-grid--3 mt-2xl list-reset">
+            {latestRecipes(3).map((recipe) => (
+              <RecipeCard recipe={recipe} />
+            ))}
+          </ul>
+
+          <div class="cluster mt-2xl" style="justify-content: center">
+            <Button href="/recipes" icon="bowl" iconPosition="start">
+              All {recipes.length} recipes
+            </Button>
+          </div>
         </div>
       </section>
     )

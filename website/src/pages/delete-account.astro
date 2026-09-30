@@ -1,0 +1,237 @@
+---
+/**
+ * The account-deletion route a privacy policy is expected to provide.
+ *
+ * `/privacy` can say "email us and we will delete your account", but that is a
+ * pointer, not a process: the requester has to guess what to write, what to
+ * include and what will happen next. This page is the process — both routes,
+ * the exact message to send, and the scope of the deletion, stated in the same
+ * words the policy uses.
+ *
+ * It is honest about what exists today: the Android app is not published yet
+ * (see `hasAndroidApp`), so the email route is the one that works now, and it
+ * says so rather than describing an app nobody can open. There is no web form,
+ * because a form with no backend would silently drop the request it claims to
+ * take.
+ */
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Button from "../components/Button.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+
+import {
+  deletionEmailSubject,
+  deletionEmailTemplate,
+  deletionMailto,
+  deletionPath,
+} from "../data/deletion";
+import { contactEmail, hasAndroidApp, site, siteUrl } from "../data/site";
+
+const pageUrl = `${siteUrl}${deletionPath}`;
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Delete account", item: pageUrl },
+  ],
+};
+
+/* The same list the privacy policy gives, so the two pages cannot describe a
+   different scope. The policy is the authoritative copy. */
+const removed = [
+  "Your profile — name, age, gender, height, weight and the goal you chose",
+  "Health information you entered, such as a self-reported condition",
+  "Food preferences, lifestyle settings and Food Memory",
+  "Meal plans, logged meals and the nutrition totals that follow",
+  "Weight entries and the progress built from them",
+];
+
+const appSteps = [
+  {
+    title: "Open Settings",
+    text: "Settings sits in the app next to your health profile and notifications.",
+  },
+  {
+    title: "Open Data & Privacy",
+    text: "The app keeps your data controls together on one screen.",
+  },
+  {
+    title: "Delete your account",
+    text: "Use the delete option there. Everything listed on this page goes with the account.",
+  },
+];
+---
+
+<BaseLayout
+  title="Delete your HealThaali account"
+  description="How to delete your HealThaali account and the data attached to it, in the app or by email — including the exact message to send and what is removed."
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Your data
+      </p>
+      <h1 class="page-hero__title">Delete your account</h1>
+      <p class="page-hero__lead">
+        You can delete your {site.name} account and the data attached to it. This page sets out both
+        routes — the one inside the app, and the email request that works today — along with exactly
+        what is removed and what to send.
+      </p>
+
+      <div class="page-hero__actions">
+        <Button href={deletionMailto} icon="mail">Email a deletion request</Button>
+        <Button href="/privacy#deletion" variant="secondary" icon="shield">
+          Read the policy section
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="removed-title">
+    <div class="container container--narrow">
+      <h2 id="removed-title">What gets deleted</h2>
+      <div class="prose">
+        <p>
+          Deleting your account removes it and everything stored with it:
+        </p>
+        <ul>
+          {removed.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+
+      <div class="callout callout--brand mt-xl">
+        <Icon name="trash" size={20} />
+        <span>
+          <span class="callout__title">Deleting is permanent</span>
+          An account cannot be restored once it has been deleted, and the plan, logs and progress
+          that went with it cannot be brought back. If what you actually want is to stop the
+          reminders, turn notifications off in Settings instead — that leaves your data in place.
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="app-title">
+    <div class="container container--narrow">
+      <h2 id="app-title">1. In the app</h2>
+      <div class="prose">
+        <p>
+          Deletion is self-service inside the app, so you do not have to wait for anyone to read a
+          message.
+        </p>
+      </div>
+
+      {
+        !hasAndroidApp && (
+          <div class="callout mt-lg">
+            <Icon name="info" size={20} />
+            <span>
+              <span class="callout__title">The Android app is not published yet</span>
+              Until it is, this route does not exist for anyone, and the email request below is the
+              one that works today. The steps here are the route the app will offer once it is on
+              Google Play.
+            </span>
+          </div>
+        )
+      }
+
+      <ol class="steps mt-xl list-reset">
+        {
+          appSteps.map((step, index) => (
+            <li class="step">
+              <span class="step__number" aria-hidden="true">
+                {index + 1}
+              </span>
+              <h3 class="step__title">{step.title}</h3>
+              <p class="step__text">{step.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="email-title">
+    <div class="container container--narrow">
+      <h2 id="email-title">2. Ask by email</h2>
+      <div class="prose">
+        <p>
+          If you have uninstalled the app, cannot sign in, or would simply rather not do it
+          yourself, send the request to <a href={`mailto:${contactEmail}`}>{contactEmail}</a>. Send
+          it from the address on the account where you can: that is how a request is matched to an
+          account. If you have lost access to that address, say so and tell us anything else that
+          identifies it.
+        </p>
+        <p>
+          Copy the message below, or use the button to open it in your mail app with the subject
+          and body already filled in. Nothing else is needed.
+        </p>
+      </div>
+
+      <pre class="email-template mt-lg">{deletionEmailTemplate}</pre>
+
+      <p class="notice mt-md">
+        Subject: <strong>{deletionEmailSubject}</strong>
+      </p>
+
+      <div class="cluster mt-lg">
+        <Button href={deletionMailto} icon="mail">Open this in your mail app</Button>
+        <Button href={`mailto:${contactEmail}`} variant="secondary">Write to {contactEmail}</Button>
+      </div>
+
+      <div class="callout callout--info mt-xl">
+        <Icon name="shield" size={20} />
+        <span>
+          <span class="callout__title">Please do not send health details</span>
+          This message only needs the account address, so do not include medical information,
+          reports or prescriptions. {site.name} is not a medical service.
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="next-title">
+    <div class="container container--narrow">
+      <h2 id="next-title">What happens next</h2>
+      <div class="prose">
+        <ul>
+          <li>
+            We act once the request can be matched to an account, so please write from the address
+            on it if that is still possible.
+          </li>
+          <li>
+            When the account is deleted, the data listed above goes with it. If a copy still exists
+            in a backup, it is overwritten on the schedule the privacy policy describes rather than
+            kept for a purpose of its own.
+          </li>
+          <li>We reply to confirm when it is done, so keep the thread if you need it.</li>
+          <li>
+            The request is not used for anything else. It is not added to a mailing list, and it
+            does not change anything about the rest of your relationship with {site.name}.
+          </li>
+        </ul>
+        <p>
+          The full description of what is stored, why, and for how long is in the{" "}
+          <a href="/privacy">privacy policy</a>, including the{" "}
+          <a href="/privacy#deletion">deletion section</a> this page carries out.
+        </p>
+      </div>
+
+      <div class="cluster mt-2xl">
+        <Button href={deletionMailto} icon="trash">
+          Email a deletion request
+        </Button>
+        <Button href="/contact" variant="secondary" icon="arrowRight" iconPosition="end">
+          Contact us instead
+        </Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

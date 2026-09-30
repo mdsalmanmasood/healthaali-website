@@ -1,0 +1,243 @@
+---
+import { Image } from "astro:assets";
+import { render } from "astro:content";
+
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Icon from "../../components/Icon.astro";
+import JsonLd from "../../components/JsonLd.astro";
+import PostCard from "../../components/PostCard.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+
+import {
+  blogFeedPath,
+  blogPath,
+  formatPostDate,
+  getPosts,
+  postDateAttribute,
+  relatedPosts,
+  tagHref,
+  type BlogPost,
+} from "../../data/blog";
+import { absoluteUrl, site, siteUrl } from "../../data/site";
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+
+  return posts.map((post, index) => ({
+    params: { slug: post.slug },
+    props: {
+      post,
+      // Posts are sorted newest first, so index - 1 is the more recent one.
+      newer: posts[index - 1] ?? null,
+      older: posts[index + 1] ?? null,
+      // Ranked by shared tags. Empty when this post has nothing in common with
+      // any other, in which case the section is not rendered at all.
+      related: relatedPosts(post, posts),
+    },
+  }));
+}
+
+interface Props {
+  post: BlogPost;
+  newer: BlogPost | null;
+  older: BlogPost | null;
+  related: BlogPost[];
+}
+
+const { post, newer, older, related } = Astro.props;
+const { Content } = await render(post.entry);
+
+const url = absoluteUrl(post.href);
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Blog", item: `${siteUrl}${blogPath}` },
+    { "@type": "ListItem", position: 3, name: post.title, item: url },
+  ],
+};
+
+/*
+  BlogPosting, built only from fields that actually exist. `author` is the
+  organisation rather than a person: no individual byline is recorded, and
+  inventing a name would be worse than attributing the post to the team that
+  wrote it. `dateModified` falls back to the publication date, which is true.
+*/
+const postSchema = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  headline: post.title,
+  description: post.description,
+  url,
+  mainEntityOfPage: url,
+  datePublished: post.publishedAt.toISOString(),
+  dateModified: (post.updatedAt ?? post.publishedAt).toISOString(),
+  inLanguage: "en",
+  author: { "@type": "Organization", name: site.name, url: `${siteUrl}/` },
+  publisher: { "@type": "Organization", name: site.name, url: `${siteUrl}/` },
+  ...(post.coverUrl ? { image: post.coverUrl } : {}),
+  ...(post.tags.length > 0 ? { keywords: post.tags.join(", ") } : {}),
+};
+
+const wasUpdated = post.updatedAt && post.updatedAt.getTime() > post.publishedAt.getTime();
+---
+
+<BaseLayout
+  title={post.title}
+  description={post.description}
+  image={post.coverUrl ?? "/og-image.jpg"}
+  canonical={post.href}
+>
+  <Fragment slot="head">
+    <link rel="alternate" type="application/rss+xml" title={`${site.name} blog`} href={blogFeedPath} />
+    <JsonLd data={breadcrumbs} />
+    <JsonLd data={postSchema} />
+  </Fragment>
+
+  <article>
+    <section class="page-hero">
+      <div class="container container--narrow">
+        <p class="eyebrow">
+          <span class="eyebrow__dot" aria-hidden="true"></span>
+          <a class="eyebrow__link" href={blogPath}>Blog</a>
+        </p>
+
+        <h1 class="page-hero__title">{post.title}</h1>
+
+        <p class="post-meta">
+          <time datetime={postDateAttribute(post.publishedAt)}>
+            {formatPostDate(post.publishedAt)}
+          </time>
+          <span aria-hidden="true">·</span>
+          <span>{post.readingMinutes} min read</span>
+        </p>
+
+        {
+          wasUpdated && post.updatedAt && (
+            <p class="notice">
+              Last updated <time datetime={postDateAttribute(post.updatedAt)}>
+                {formatPostDate(post.updatedAt)}
+              </time>.
+            </p>
+          )
+        }
+
+        {
+          post.tags.length > 0 && (
+            /*
+              Here the tags are links, because this page has no card overlay
+              swallowing clicks. They stay plain <span> chips inside a listing
+              card on purpose: PostCard has a single link by design, and a second
+              interactive element underneath its ::after overlay would be
+              unreachable by keyboard and mouse alike.
+            */
+            <nav aria-label="Topics for this post">
+              <ul class="post-tags list-reset" role="list">
+                {post.tags.map((tag) => (
+                  <li>
+                    <a class="chip chip--brand" href={tagHref(tag)}>
+                      {tag}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )
+        }
+      </div>
+    </section>
+
+    {
+      post.cover && (
+        <div class="container container--narrow">
+          <Image
+            src={post.cover}
+            alt={post.coverAlt ?? ""}
+            widths={[480, 800, 1200]}
+            sizes="(max-width: 767px) 92vw, 720px"
+            loading="eager"
+            decoding="async"
+            class="post-cover"
+          />
+        </div>
+      )
+    }
+
+    <section class="section">
+      <div class="container container--narrow">
+        {/* Rendered Markdown. Headings inside a post start at `##` — a `#` in a
+            body is rejected at build time, since the <h1> is the title above. */}
+        <div class="prose">
+          <Content />
+        </div>
+      </div>
+    </section>
+  </article>
+
+  {
+    related.length > 0 && (
+      <section class="section section--alt" aria-labelledby="related-title">
+        <div class="container">
+          <SectionHeading
+            eyebrow="Keep reading"
+            eyebrowIcon="list"
+            title="Related posts"
+            lead="Every card below shares at least one topic with this post, chosen by shared tags rather than by a guess."
+            id="related-title"
+          />
+
+          <ul class="card-grid card-grid--3 mt-2xl list-reset" role="list">
+            {related.map((entry) => (
+              <PostCard post={entry} />
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section" aria-labelledby="post-nav-title">
+    <div class="container container--narrow">
+      <h2 class="sr-only" id="post-nav-title">More posts</h2>
+
+      <nav class="post-nav" aria-label="Other posts">
+        {
+          older ? (
+            <a class="post-nav__link" href={older.href}>
+              <span class="post-nav__label">
+                <Icon name="arrowRight" size={14} />
+                Older
+              </span>
+              <span class="post-nav__title">{older.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+
+        {
+          newer ? (
+            <a class="post-nav__link post-nav__link--end" href={newer.href}>
+              <span class="post-nav__label">
+                Newer
+                <Icon name="arrowRight" size={14} />
+              </span>
+              <span class="post-nav__title">{newer.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+      </nav>
+
+      <p class="mt-xl">
+        <a class="link-arrow" href={blogPath}>
+          <Icon name="arrowRight" size={15} />
+          All posts
+        </a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>

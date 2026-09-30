@@ -5,19 +5,35 @@ export interface NavItem {
   hint?: string;
 }
 
-/** Sticky-header navigation (desktop breakpoint and up). */
+/**
+ * Sticky-header navigation (desktop breakpoint and up).
+ *
+ * Exactly five items, which is what fits on one line at the 1024px breakpoint
+ * with room to spare. "Products" is the hub for the Android and web builds —
+ * they are the same app on two platforms, so they are listed inside /products
+ * and in the footer rather than taking two slots here. Adding a sixth item
+ * pushes the row past the available width, so measure before doing it.
+ */
 export const mainNav: NavItem[] = [
   { label: "Features", href: "/features", hint: "Everything the app does" },
-  { label: "Web App", href: "/web-app", hint: "Use HealThaali in a browser" },
-  { label: "Android", href: "/android", hint: "The phone companion" },
+  { label: "Recipes", href: "/recipes", hint: "Watch the dishes being cooked" },
+  { label: "Products", href: "/products", hint: "What exists today, and what is still being built" },
+  { label: "Blog", href: "/blog", hint: "Notes from the kitchen" },
   { label: "About", href: "/about", hint: "Why we build this" },
 ];
 
-/** Extra destinations shown only in the mobile menu / footer. */
+/**
+ * Extra destinations shown only in the mobile menu / footer.
+ *
+ * "Delete Account" belongs to the data-rights side of the site: it is the route
+ * `/privacy` and `/terms` point at, and it is reachable here and in the footer
+ * rather than the header, whose five items already fill the row at 1024px.
+ */
 export const secondaryNav: NavItem[] = [
   { label: "Privacy", href: "/privacy" },
   { label: "Terms", href: "/terms" },
   { label: "Contact", href: "/contact" },
+  { label: "Delete Account", href: "/delete-account" },
 ];
 
 /** Mobile menu order: main destinations first, then the utility pages. */
@@ -32,7 +48,9 @@ export const footerNav: FooterGroup[] = [
   {
     title: "Product",
     links: [
+      { label: "Products", href: "/products" },
       { label: "Features", href: "/features" },
+      { label: "Recipes", href: "/recipes" },
       { label: "Web App", href: "/web-app" },
       { label: "Android", href: "/android" },
     ],
@@ -41,6 +59,7 @@ export const footerNav: FooterGroup[] = [
     title: "Company",
     links: [
       { label: "About", href: "/about" },
+      { label: "Blog", href: "/blog" },
       { label: "Contact", href: "/contact" },
     ],
   },
@@ -49,6 +68,10 @@ export const footerNav: FooterGroup[] = [
     links: [
       { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms of Service", href: "/terms" },
+      // Kept out of the header on purpose: that row is full at the 1024px
+      // breakpoint, and this is a page people arrive at by searching for it
+      // rather than one they browse to.
+      { label: "Delete Account", href: "/delete-account" },
     ],
   },
 ];

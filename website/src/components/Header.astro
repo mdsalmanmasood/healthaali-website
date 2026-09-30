@@ -2,7 +2,8 @@
 import Logo from "./Logo.astro";
 import MobileMenu from "./MobileMenu.astro";
 import ThemeToggle from "./ThemeToggle.astro";
-import { androidUrl, hasAndroidApp, site } from "../data/site";
+import { mainNav } from "../data/navigation";
+import { androidUrl, hasAndroidApp } from "../data/site";
 
 const path = Astro.url.pathname;
 const isCurrent = (href: string) => path === href || (href !== "/" && path.startsWith(`${href}/`));
@@ -27,12 +28,11 @@ const appHref = hasAndroidApp ? androidUrl : "/android";
     <nav class="nav" aria-label="Primary">
       <ul class="nav__list">
         {
-          [
-            { label: "Features", href: "/features" },
-            { label: "Web App", href: "/web-app" },
-            { label: "Android", href: "/android" },
-            { label: "About", href: "/about" },
-          ].map((item) => (
+          // Driven by `mainNav`, not an inline copy. This list used to be
+          // hardcoded here while the mobile menu and the 404 page read
+          // navigation.ts, so adding a page meant remembering both — and
+          // forgetting one produced a header that disagreed with the menu.
+          mainNav.map((item) => (
             <li>
               <a
                 class="nav__link"

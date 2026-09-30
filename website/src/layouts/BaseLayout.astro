@@ -2,6 +2,8 @@
 import { ClientRouter } from "astro:transitions";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
+import JsonLd from "../components/JsonLd.astro";
+import { siteSchema } from "../data/schema";
 import { absoluteUrl, analyticsId, site, siteUrl } from "../data/site";
 
 import "../styles/tokens.css";
@@ -31,7 +33,15 @@ const {
 } = Astro.props;
 
 const pageTitle = title.includes(site.name) ? title : `${title} | ${site.name}`;
-const canonicalUrl = canonical ? absoluteUrl(canonical) : new URL(Astro.url.pathname, siteUrl).href;
+// A noindex page has no canonical URL to claim. 404.astro is the only such page,
+// and it is served for *any* unknown path, so Astro's route pathname (`/404/`)
+// describes a URL this site does not actually serve. Emitting it would be an
+// invented URL in the <head>, so both tags are omitted instead.
+const canonicalUrl = noindex
+  ? undefined
+  : canonical
+    ? absoluteUrl(canonical)
+    : new URL(Astro.url.pathname, siteUrl).href;
 const ogImage = /^https?:\/\//.test(image) ? image : absoluteUrl(image);
 const ogType = "website";
 ---
@@ -44,7 +54,7 @@ const ogType = "website";
 
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonicalUrl} />
+    {canonicalUrl ? <link rel="canonical" href={canonicalUrl} /> : null}
     {noindex ? <meta name="robots" content="noindex, nofollow" /> : null}
 
     <!-- Open Graph -->
@@ -52,7 +62,7 @@ const ogType = "website";
     <meta property="og:site_name" content={site.name} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonicalUrl} />
+    {canonicalUrl ? <meta property="og:url" content={canonicalUrl} /> : null}
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -128,6 +138,13 @@ const ogType = "website";
         />
       ) : null
     }
+
+    <!--
+      Site-wide structured data (Organization + WebSite). Emitted here, once,
+      for every page; per-page nodes (breadcrumbs, BlogPosting, …) come through
+      the `head` slot below and reference these by `@id`.
+    -->
+    <JsonLd data={siteSchema} />
 
     <slot name="head" />
   </head>

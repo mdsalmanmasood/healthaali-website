@@ -14,7 +14,13 @@ const suggestions = [...mainNav, ...secondaryNav];
 >
   <section class="container">
     <div class="error-page">
-      <p class="error-page__code">404</p>
+      <!--
+        Decorative display type, not a heading: the <h1> below already says the
+        page could not be found, so a screen reader announcing "404" first would
+        only repeat it. Marked aria-hidden rather than left in the accessibility
+        tree; axe's p-as-heading rule flags a styled <p> next to a real heading.
+      -->
+      <p class="error-page__code" aria-hidden="true">404</p>
 
       <h1>This page couldn't be found</h1>
 

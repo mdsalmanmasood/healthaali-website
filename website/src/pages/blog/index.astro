@@ -1,0 +1,150 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Button from "../../components/Button.astro";
+import Icon from "../../components/Icon.astro";
+import JsonLd from "../../components/JsonLd.astro";
+import PostCard from "../../components/PostCard.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import TopicRail from "../../components/TopicRail.astro";
+
+import { blogFeedPath, blogPath, collectTags, formatPostDate, getPosts } from "../../data/blog";
+import { site, siteUrl } from "../../data/site";
+
+const posts = await getPosts();
+const posted = posts.length > 0;
+const newest = posts[0];
+// Topics in use, most-used first. Empty while the blog is empty, in which case
+// the rail below renders nothing rather than a heading with no links under it.
+const tags = collectTags(posts);
+
+const pageUrl = `${siteUrl}${blogPath}`;
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Blog", item: pageUrl },
+  ],
+};
+
+/*
+  The Blog node carries a `blogPost` list only when there are posts. An empty
+  `blogPost: []` would tell a crawler the blog has an item list of zero, which
+  is true but misleading in an index; omitting the property says nothing at all.
+*/
+const blogSchema = {
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  name: `The ${site.name} blog`,
+  url: pageUrl,
+  description:
+    "Notes from the HealThaali kitchen on cooking with less oil, balanced Indian meals and steady progress.",
+  ...(posted
+    ? { blogPost: posts.map((post) => `${siteUrl}${post.href}`) }
+    : {}),
+};
+---
+
+<BaseLayout
+  title="Notes from the HealThaali kitchen"
+  description="The HealThaali blog: cooking with less oil, what goes into a balanced thaali, and what we learn while filming recipes."
+>
+  <Fragment slot="head">
+    {/* Both are absolute so the feed resolves from any page it is read on. */}
+    <link rel="alternate" type="application/rss+xml" title={`${site.name} blog`} href={blogFeedPath} />
+    <JsonLd data={breadcrumbs} />
+    <JsonLd data={blogSchema} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Blog
+      </p>
+      <h1 class="page-hero__title">Notes from the kitchen</h1>
+      <p class="page-hero__lead">
+        Longer-form writing than a video allows: what we cook with, why a dish is built the way it
+        is, and what we are still working out. Everything we can check, we check — and where we are
+        unsure, we say so.
+      </p>
+
+      <div class="page-hero__actions">
+        <a class="link-arrow" href={blogFeedPath}>
+          <Icon name="list" size={16} />
+          Subscribe via RSS
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section--tight" aria-labelledby="posts-title">
+    <div class="container">
+      {
+        posted ? (
+          <>
+            <SectionHeading
+              eyebrow={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
+              eyebrowIcon="list"
+              title="Newest first"
+              id="posts-title"
+            />
+
+            {
+              tags.length > 0 && (
+                <div class="mt-xl">
+                  <TopicRail tags={tags} />
+                </div>
+              )
+            }
+
+            <ul class="card-grid card-grid--3 mt-2xl list-reset" role="list">
+              {posts.map((post) => (
+                <PostCard post={post} />
+              ))}
+            </ul>
+
+            <p class="notice mt-xl">
+              Last published {newest ? formatPostDate(newest.publishedAt) : ""}. Older posts stay at
+              the same address — nothing here is ever rewritten without a note at the foot of the
+              page.
+            </p>
+          </>
+        ) : (
+          <>
+            <SectionHeading
+              eyebrow="Nothing published yet"
+              eyebrowIcon="info"
+              title="The first post is being written"
+              lead="This page is wired up and empty on purpose. Rather than padding it with articles nobody wrote, it stays honest until the first one is ready."
+              id="posts-title"
+            />
+
+            <div class="callout mt-xl">
+              <Icon name="info" size={20} />
+              <span>
+                <span class="callout__title">What will be published here</span>
+                Notes that do not fit in a video: how a recipe was built and why, what changed after
+                we tested it, and the cooking decisions that matter more than the ingredient list.
+                Posts appear in this list and in the RSS feed in the same moment.
+              </span>
+            </div>
+
+            <p class="mt-xl">
+              Meanwhile there is real content to watch — every dish we have filmed is listed with its
+              video.
+            </p>
+
+            <div class="page-hero__actions mt-lg">
+              <Button href="/recipes" icon="play">Browse the recipes</Button>
+              <Button href="/contact" variant="secondary" icon="mail" iconPosition="end">
+                Suggest a topic
+              </Button>
+            </div>
+          </>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

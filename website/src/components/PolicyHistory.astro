@@ -1,0 +1,44 @@
+---
+/**
+ * Version history list for a legal document.
+ *
+ * Both `/privacy` and `/terms` render this, so the two histories look and read
+ * the same and the anchor target (`#history`) exists on both. The newest entry
+ * is the version in force and is labelled as such from its position in the
+ * list, never from a hand-set flag — a flag is one more thing that can go stale.
+ */
+import { formatPolicyDate, type PolicyVersion } from "../data/legal-history";
+
+interface Props {
+  versions: PolicyVersion[];
+}
+
+const { versions } = Astro.props;
+---
+
+<h2 id="history">Version history</h2>
+
+<p>
+  Every version of this document is listed here with the date it took effect. The text on this page
+  is the version in force today. When it changes, the previous version stays in the list, so the
+  date and what changed remain on the record.
+</p>
+
+<ol class="policy-history">
+  {
+    versions.map((version, index) => (
+      <li class="policy-history__item">
+        <p class="policy-history__date">
+          <time datetime={version.effectiveDate}>{formatPolicyDate(version.effectiveDate)}</time>
+          {index === 0 ? <span class="policy-history__badge">Current version</span> : null}
+        </p>
+        <p class="policy-history__summary">{version.summary}</p>
+        <ul class="policy-history__details">
+          {version.details.map((detail) => (
+            <li>{detail}</li>
+          ))}
+        </ul>
+      </li>
+    ))
+  }
+</ol>

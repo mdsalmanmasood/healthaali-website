@@ -22,6 +22,14 @@ const socialIcons: Record<string, string> = {
         <Logo />
         <p class="site-footer__blurb">{site.description}</p>
 
+        {/* The one contact detail the organisation is sure of. */}
+        <p class="site-footer__contact">
+          <a href={`mailto:${site.contactEmail}`}>
+            <Icon name="mail" size={15} />
+            {site.contactEmail}
+          </a>
+        </p>
+
         {
           site.socials.length > 0 && (
             <div class="social-row mt-lg">

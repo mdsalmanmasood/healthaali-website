@@ -1,9 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Button from "../components/Button.astro";
-import Icon from "../components/Icon.astro";
+import PolicyHistory from "../components/PolicyHistory.astro";
 
+import { deletionPath } from "../data/deletion";
 import { medicalDisclaimer } from "../data/features";
+import { policyEffectiveDate, termsPolicyHistory } from "../data/legal-history";
 import { contactEmail, site } from "../data/site";
 
 const hasEmail = contactEmail.length > 0;
@@ -23,6 +25,7 @@ const sections = [
   { id: "law", label: "Governing law" },
   { id: "changes", label: "Changes" },
   { id: "contact", label: "Contact" },
+  { id: "history", label: "Version history" },
 ];
 ---
 
@@ -41,15 +44,10 @@ const sections = [
         These terms cover your use of the {site.name} application and this website. Please read the
         medical disclaimer in particular.
       </p>
-      <div class="callout mt-xl">
-        <Icon name="info" size={20} />
-        <span>
-          <span class="callout__title">Pre-launch draft — placeholders must be completed</span>
-          Square brackets mark details that have not been supplied and must be filled in — and the
-          whole document reviewed by a qualified adviser — before launch. Effective date:{" "}
-          <strong>{site.placeholders.effectiveDate}</strong>.
-        </span>
-      </div>
+      <p class="page-hero__meta">
+        Effective {policyEffectiveDate(termsPolicyHistory)} ·{" "}
+        <a href="#history">Version history</a>
+      </p>
     </div>
   </section>
 
@@ -66,8 +64,8 @@ const sections = [
           to these terms. If you do not agree, please do not use the service.
         </p>
         <p>
-          The service is provided by <strong>{site.placeholders.legalEntity}</strong>, registered at{" "}
-          <strong>{site.placeholders.address}</strong>.
+          The service is provided by <strong>{site.legal.entity}</strong>, {site.legal.entityType},
+          based in <strong>{site.legal.location}</strong>.
         </p>
 
         <h2 id="service">2. The service</h2>
@@ -100,7 +98,7 @@ const sections = [
         <ul>
           <li>You are responsible for the accuracy of the information you enter.</li>
           <li>Keep your account credentials confidential and tell us about unauthorised use.</li>
-          <li>The service is not intended for children; the minimum age is <strong>[confirm]</strong>.</li>
+          <li>The service is not intended for children.</li>
         </ul>
 
         <h2 id="acceptable-use">5. Acceptable use</h2>
@@ -144,8 +142,8 @@ const sections = [
         <h2 id="ip">9. Intellectual property</h2>
         <p>
           The {site.name} name, logo, wordmark, design and the content we publish belong to{" "}
-          <strong>{site.placeholders.legalEntity}</strong> or its licensors. These terms do not grant
-          you any right to use our branding.
+          <strong>{site.legal.entity}</strong> or its licensors. These terms do not grant you any
+          right to use our branding.
         </p>
 
         <h2 id="liability">10. Disclaimers and limitation of liability</h2>
@@ -159,29 +157,26 @@ const sections = [
           your use of the service. Nothing in these terms limits liability that cannot lawfully be
           limited.
         </p>
-        <p>
-          <strong>[Confirm the liability position and any consumer-law carve-outs with a qualified
-          adviser for the jurisdictions you operate in.]</strong>
-        </p>
-
         <h2 id="termination">11. Termination</h2>
         <p>
-          You may stop using the service and delete your account at any time — see{" "}
+          You may stop using the service and delete your account at any time — in the app or from the{" "}
+          <a href={deletionPath}>account deletion page</a>, both described in{" "}
           <a href="/privacy#deletion">the deletion section of the privacy policy</a>. We may suspend
           or terminate access if these terms are materially breached or if we are required to by law.
         </p>
 
         <h2 id="law">12. Governing law</h2>
         <p>
-          These terms are governed by the laws of <strong>{site.placeholders.jurisdiction}</strong>,
-          and the courts of that jurisdiction have exclusive jurisdiction over any dispute.
+          These terms are governed by the laws of <strong>{site.legal.law}</strong>, and{" "}
+          <strong>{site.legal.forum}</strong> have exclusive jurisdiction over any dispute.
         </p>
 
         <h2 id="changes">13. Changes to these terms</h2>
         <p>
           We may update these terms as the service changes. The effective date above will be revised,
-          and material changes will be communicated in the app. Continuing to use the service after a
-          change means you accept the updated terms.
+          and material changes will be communicated in the app. Every version is listed in the{" "}
+          <a href="#history">version history</a>, so what changed and when stays on the record.
+          Continuing to use the service after a change means you accept the updated terms.
         </p>
 
         <h2 id="contact">14. Contact</h2>
@@ -196,6 +191,10 @@ const sections = [
             " use the contact channels listed on the Contact page."
           )}
         </p>
+
+        <hr />
+
+        <PolicyHistory versions={termsPolicyHistory} />
       </div>
 
       <div class="cluster mt-2xl">

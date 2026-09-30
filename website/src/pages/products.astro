@@ -1,0 +1,226 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Button from "../components/Button.astro";
+import DownloadCTA from "../components/DownloadCTA.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+
+import { offerings, platforms } from "../data/products";
+import { site, siteUrl } from "../data/site";
+
+const recipesOffering = offerings.find((offering) => offering.id === "recipes");
+
+/*
+  One row per place you can actually go. The two app platforms come from
+  src/data/products.ts (driven by the PUBLIC_ environment variables), and the
+  recipes row is the same offering object the cards below render — so the
+  availability line and the card can never disagree.
+*/
+const availability = [
+  ...platforms.map((row) => ({
+    id: row.id,
+    name: row.name,
+    icon: row.id === "android" ? ("smartphone" as const) : ("monitor" as const),
+    status: row.status,
+    statusLabel: row.statusLabel,
+    href: row.href,
+    externalUrl: row.externalUrl,
+    externalLabel: row.externalLabel,
+  })),
+  ...(recipesOffering
+    ? [
+        {
+          id: recipesOffering.id,
+          name: "Recipes and videos",
+          icon: "play" as const,
+          status: recipesOffering.status,
+          statusLabel: recipesOffering.statusLabel,
+          href: recipesOffering.href,
+          externalUrl: undefined,
+          externalLabel: undefined,
+        },
+      ]
+    : []),
+];
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Products", item: `${siteUrl}/products` },
+  ],
+};
+---
+
+<BaseLayout
+  title="Products — What HealThaali Offers Today"
+  description="What HealThaali actually ships: the meal-planning app and the recipes we publish, with the current availability of each stated plainly, and no prices invented."
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Products
+      </p>
+      <h1 class="page-hero__title">What you can get, and what is still being built</h1>
+      <p class="page-hero__lead">
+        This page is an index of the real things: the app, wherever it currently runs, and the
+        recipes we publish. Each one says where it stands instead of implying it is finished. If a
+        status here looks unfinished, that is because it is.
+      </p>
+
+      <div class="page-hero__actions">
+        <Button href="#availability" icon="list">See availability</Button>
+        <Button href="/features" variant="secondary" icon="arrowRight" iconPosition="end">
+          What the app does
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Availability -->
+  <section class="section--tight" id="availability" aria-labelledby="availability-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Availability"
+        eyebrowIcon="info"
+        title="Where each one stands right now"
+        lead="Status is driven by the same configuration the rest of the site uses, so it changes the moment a real link exists."
+        id="availability-title"
+      />
+
+      <ul class="offer-row-list list-reset mt-2xl" role="list">
+        {
+          availability.map((row) => (
+            <li class="offer-row">
+              <span class="offer-row__name">
+                <span class="offer-row__icon" aria-hidden="true">
+                  <Icon name={row.icon} size={18} />
+                </span>
+                {row.name}
+              </span>
+
+              <span class={`chip ${row.status === "available" ? "chip--brand" : "chip--gold"}`}>
+                {row.statusLabel}
+              </span>
+
+              <span class="offer-row__actions">
+                <a class="link-arrow" href={row.href}>Details</a>
+                {row.externalUrl && row.externalLabel && (
+                  <a
+                    class="link-arrow"
+                    href={row.externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Icon name="arrowUpRight" size={14} />
+                    {row.externalLabel}
+                    <span class="sr-only"> (opens in a new tab)</span>
+                  </a>
+                )}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Offerings -->
+  <section class="section" aria-labelledby="offerings-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="The short list"
+        eyebrowIcon="check"
+        title="Two things, described plainly"
+        lead="No tiers, no bundles, no feature matrix. There are two offerings, and this is what each one is."
+        id="offerings-title"
+      />
+
+      <ul class="card-grid card-grid--2 mt-2xl list-reset" role="list">
+        {
+          offerings.map((offering) => (
+            <li class="offer-card">
+              <div class="offer-card__head">
+                <h3 class="offer-card__title">{offering.name}</h3>
+                <span
+                  class={`chip ${offering.status === "available" ? "chip--brand" : "chip--gold"}`}
+                >
+                  {offering.statusLabel}
+                </span>
+              </div>
+
+              <p class="offer-card__text">{offering.tagline}</p>
+
+              <p class="offer-card__label">Includes</p>
+              <ul class="offer-card__list" role="list">
+                {offering.includes.map((item) => (
+                  <li>
+                    <Icon name="check" size={15} />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <p class="offer-card__cta">
+                <a class="link-arrow" href={offering.href}>
+                  {offering.id === "recipes" ? "Browse the recipes" : "Read the detail"}
+                  <Icon name="arrowRight" size={15} />
+                </a>
+              </p>
+            </li>
+          ))
+        }
+      </ul>
+
+      {
+        platforms.some((row) => row.externalUrl) && (
+          <p class="notice mt-xl">
+            Store links above open outside {site.name}. Everything else on this page stays on this
+            site.
+          </p>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- What is not here -->
+  <section class="section section--alt" aria-labelledby="not-here-title">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="Scope"
+        eyebrowIcon="shield"
+        title="What you will not find on this page"
+        align="center"
+        id="not-here-title"
+      />
+
+      <div class="callout mt-xl">
+        <Icon name="info" size={20} />
+        <span>
+          <span class="callout__title">No prices, plans or purchase flow</span>
+          None is published because none has been confirmed. There is no tier table, no “contact us
+          for pricing” button and no checkout anywhere on this site. If a paid product ever launches,
+          it will appear here with its actual price and terms — and until then, its absence is the
+          honest answer.
+        </span>
+      </div>
+
+      <p class="notice mt-lg">
+        There are also no download counts, review scores or user numbers anywhere in this catalogue.
+        A figure we cannot stand behind does not belong on a product page.
+      </p>
+    </div>
+  </section>
+
+  <DownloadCTA
+    title="Start with whatever exists today"
+    text="The recipes are free right now. Open one, cook it, and decide about the app afterwards."
+  />
+</BaseLayout>

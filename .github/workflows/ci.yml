@@ -1,0 +1,106 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HealThaali — continuous integration
+#
+# Seven gates, in the order a failure is cheapest to understand:
+#
+#   1. Install       `npm ci` from the committed lockfile
+#   2. Typecheck     `astro check` — TypeScript + template diagnostics
+#   3. Build         `astro build` → dist/
+#   4. Check recipes the committed YouTube snapshot is valid and every
+#                    recipe has its thumbnail on disk (offline; no network)
+#   5. Check placeholders
+#                    no `[square-bracket]` scaffolding left in any built page
+#   6. Check links   internal link, anchor, sitemap and robots integrity
+#   7. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
+#                    in both the light and the dark colour scheme
+#
+# Every step runs the same npm script a developer runs locally, so CI cannot
+# drift from the documented workflow: if it is green here, `npm run verify`
+# passes on your machine.
+#
+# Node 22 is deliberate — it is the version `netlify.toml` pins for the real
+# deployment, so CI tests the runtime the site actually ships on rather than
+# the newest one available.
+#
+# No environment variables are set. Every PUBLIC_ value is optional by design,
+# and with them all empty the build produces the honest "coming soon"
+# placeholder state — which is exactly what should be verified.
+#
+# External link checking is NOT part of this pipeline: a 429 from Instagram
+# must never turn a pull request red. Run `npm run check:links:external` by
+# hand (or from a scheduled workflow) when you want live URLs probed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push supersedes the run it replaced.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The pipeline only reads the repository.
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # The website is a project inside the repository, not the repository root.
+    working-directory: website
+
+jobs:
+  verify:
+    name: Build and audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          # `cache` needs the lockfile path explicitly, because package.json is
+          # not at the repository root.
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Separate from the build so a type error reports as "Typecheck" rather
+      # than as a generic build failure. `npm run build` runs `astro check`
+      # again on purpose — keeping the documented build command as the one
+      # true source of truth is worth the few duplicated seconds.
+      - name: Typecheck
+        run: npm run check
+
+      # Offline and instant. The build validates the same snapshot, but this
+      # reports which recipe is wrong instead of failing mid-build.
+      - name: Check recipe data
+        run: npm run check:recipes
+
+      - name: Build the static site
+        run: npm run build
+
+      # Fails on any `[bracketed]` placeholder in the built pages. Cheap and
+      # text-only, so it runs before the browser-based audits.
+      - name: Check for leftover placeholders
+        run: npm run check:placeholders
+
+      - name: Check links in the built site
+        run: npm run check:links
+
+      # Serves dist/ itself and auto-discovers every page, so new pages are
+      # covered without touching scripts/check-a11y.mjs. Chrome is the one
+      # already installed on the runner; no browser is downloaded.
+      - name: Check accessibility
+        run: npm run check:a11y

@@ -1,0 +1,37 @@
+---
+import type { BlogTag } from "../data/blog";
+
+interface Props {
+  tags: BlogTag[];
+  /** Slug of the tag whose page this is rendered on, marked with aria-current. */
+  current?: string;
+  label?: string;
+}
+
+const { tags, current, label = "Browse by topic" } = Astro.props;
+---
+
+{/*
+  Renders nothing at all when there are no tags — an empty <nav> is noise, and
+  with no posts the blog has no topics yet.
+
+  No aria-label on the individual links: each one is named by its visible tag
+  text, which is what keeps axe's `label-content-name-mismatch` rule quiet. The
+  current topic is marked with aria-current="page" instead of being styled
+  differently with no explanation.
+*/}
+{
+  tags.length > 0 && (
+    <nav class="anchor-nav" aria-label={label}>
+      {tags.map((tag) => (
+        <a
+          class="chip chip--brand"
+          href={tag.href}
+          aria-current={tag.slug === current ? "page" : undefined}
+        >
+          {tag.name}
+        </a>
+      ))}
+    </nav>
+  )
+}

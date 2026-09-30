@@ -1,0 +1,75 @@
+---
+import { Image } from "astro:assets";
+import Icon from "./Icon.astro";
+import { formatPostDate, postDateAttribute, type BlogPost } from "../data/blog";
+
+interface Props {
+  post: BlogPost;
+}
+
+const { post } = Astro.props;
+---
+
+{/*
+  Same shape as RecipeCard, for the same reason: exactly one link per card, and
+  the headline is it. A wrapper <a> would make the accessible name the
+  concatenation of the date, the title, the teaser and the call to action, and
+  would leave no heading in the list; a `::after` overlay on the title link
+  keeps the card clickable without either problem.
+
+  No aria-label on the link, deliberately — axe's `label-content-name-mismatch`
+  rule flags a label that does not contain the visible text, and letting the
+  title name itself avoids that class of bug entirely.
+*/}
+<li class="post-card">
+  {
+    post.cover && (
+      <div class="post-card__media">
+        {/* Decorative here: the heading beside it already names the post. The
+            meaningful description lives on the post page itself. */}
+        <Image
+          src={post.cover}
+          alt=""
+          widths={[240, 400, 800]}
+          sizes="(max-width: 639px) 88vw, (max-width: 1023px) 44vw, 350px"
+          loading="lazy"
+          decoding="async"
+          class="post-card__img"
+        />
+      </div>
+    )
+  }
+
+  <div class="post-card__body">
+    <p class="post-card__meta">
+      <time datetime={postDateAttribute(post.publishedAt)}>
+        {formatPostDate(post.publishedAt)}
+      </time>
+      <span aria-hidden="true">·</span>
+      <span>{post.readingMinutes} min read</span>
+    </p>
+
+    <h3 class="post-card__title">
+      <a class="post-card__link" href={post.href}>{post.title}</a>
+    </h3>
+
+    <p class="post-card__text">{post.description}</p>
+
+    {
+      post.tags.length > 0 && (
+        <ul class="post-card__tags list-reset" role="list">
+          {post.tags.map((tag) => (
+            <li>
+              <span class="chip chip--brand">{tag}</span>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    <p class="post-card__cta" aria-hidden="true">
+      Read the post
+      <Icon name="arrowRight" size={15} />
+    </p>
+  </div>
+</li>

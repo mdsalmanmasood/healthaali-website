@@ -1,0 +1,223 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HealThaali — scheduled recipe sync
+#
+# Once a day, pull the HealThaali YouTube feed, update the committed recipe
+# snapshot, and propose the change as a pull request. When the channel has
+# published nothing new, this workflow touches nothing at all: no branch, no
+# commit, no pull request. That is the normal outcome for most runs.
+#
+# How it decides
+# --------------
+# `npm run recipes` is already idempotent — it writes `src/data/recipes.json`
+# only when the assembled snapshot really differs from the file on disk, and it
+# preserves `updatedAt` across a no-op sync so the file stays byte-identical.
+# This workflow therefore does not need to interpret anything: it runs the sync
+# and then asks git whether the working tree changed. If it did not, it stops.
+#
+# One pull request at a time
+# --------------------------
+# Everything is proposed on the single branch `automation/recipe-sync`, which is
+# force-pushed with --force-with-lease. If a pull request for that branch is
+# still open, its commits and description are refreshed; if the previous one was
+# merged or closed, a new one is opened. A daily workflow that opened a fresh
+# branch every morning would bury the repository in near-identical pull
+# requests, and a reviewer would have no way to tell them apart.
+#
+# Why it verifies the change itself
+# ---------------------------------
+# GitHub suppresses workflow runs for events caused by the repository's
+# GITHUB_TOKEN — which includes pull requests opened with it — so `ci.yml` will
+# NOT run on the pull request this workflow creates. Rather than hand over an
+# unverified change, this job runs `npm run verify` (typecheck, build, link
+# integrity and accessibility) *before* it commits anything. A change that fails
+# those gates is never pushed and never proposed; the run fails instead, which
+# is visible in the Actions tab.
+#
+# To have `ci.yml` show up as a check on the pull request, push with a personal
+# access token or GitHub App token instead of `secrets.GITHUB_TOKEN` and drop
+# the verify step. The trade-off is a long-lived credential in the repository.
+#
+# Caveats worth knowing
+# ---------------------
+#   - GitHub disables scheduled workflows in repositories with no activity for
+#     60 days. Any commit (including merging one of these pull requests) resets
+#     that clock. `workflow_dispatch` runs it by hand at any time.
+#   - Scheduled runs only fire on the default branch, and can be delayed at
+#     times of high load.
+#   - Nothing here is destructive. The sync never deletes a recipe (see the
+#     `--prune` note in scripts/sync-recipes.mjs), and the push is guarded by an
+#     explicit --force-with-lease against the commit the remote was at when this
+#     job looked — if it moved in between, the push is rejected rather than
+#     overwriting whatever arrived.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Sync recipes
+
+on:
+  schedule:
+    # 03:00 UTC — 08:30 in the audience's timezone, a quiet hour everywhere.
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+# Never overlap with itself, and never cancel a run that is part-way through
+# pushing: a half-finished push is worse than a slightly later one.
+concurrency:
+  group: sync-recipes
+  cancel-in-progress: false
+
+# Pushing a branch needs contents: write; opening the pull request needs
+# pull-requests: write. Everything else stays read-only.
+permissions:
+  contents: write
+  pull-requests: write
+
+defaults:
+  run:
+    # The website is a project inside the repository, not the repository root.
+    # `git` commands below therefore run from website/, and the paths they use
+    # are relative to it.
+    working-directory: website
+
+jobs:
+  sync:
+    name: Sync from the YouTube feed
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # `gh` reads this; `git push` authenticates through the credential helper
+      # actions/checkout configures with the same token.
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      BRANCH: automation/recipe-sync
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          # Only the checked-out commit matters: change detection compares the
+          # working tree against it, and nothing here reads history.
+          fetch-depth: 1
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The only networked step in this workflow. It writes nothing when the
+      # snapshot is already current.
+      #
+      # The report goes to $RUNNER_TEMP, deliberately outside the repository:
+      # a file written inside website/ would show up as a change in the next
+      # step and make a quiet day look like news.
+      - name: Sync the recipe snapshot
+        run: npm run recipes -- --report "$RUNNER_TEMP/recipe-sync.md"
+
+      # The sync writes this report on every run, including a no-op one, so each
+      # scheduled run leaves a readable record of what it found.
+      - name: Summarise the run
+        run: cat "$RUNNER_TEMP/recipe-sync.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Did anything change?
+        id: changes
+        run: |
+          if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Changed:"
+            git status --porcelain --untracked-files=all
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No new videos since the last sync — nothing to propose."
+          fi
+
+      # See the note at the top: ci.yml cannot run on the pull request this job
+      # opens, so the gates run here, before anything is committed.
+      - name: Verify the new data before proposing it
+        if: steps.changes.outputs.changed == 'true'
+        run: npm run verify
+
+      - name: Commit the new data
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          # The runner has no git identity of its own. This one names the
+          # automation, so the commit is not mistaken for a human edit.
+          git config user.name "healthaali-recipe-sync"
+          git config user.email "info@healthaali.in"
+
+          git switch --force-create "$BRANCH"
+          git add src/data/recipes.json src/assets/recipes
+
+          # Defensive: if git reported a change but neither of those paths is
+          # staged, something unexpected was modified and it should not be
+          # bundled into an automated commit.
+          if git diff --cached --quiet; then
+            echo "The working tree changed, but not in the recipe files. Refusing to commit."
+            exit 1
+          fi
+
+          {
+            echo "Sync recipe data from the HealThaali YouTube channel"
+            echo
+            cat "$RUNNER_TEMP/recipe-sync.md"
+            echo
+            echo "Generated by .github/workflows/sync-recipes.yml"
+          } > "$RUNNER_TEMP/commit-message.txt"
+
+          git commit --file="$RUNNER_TEMP/commit-message.txt"
+
+      - name: Push the branch
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          # Read the remote's current commit, then require it to still be that
+          # commit at push time. Fetching first and using a bare
+          # --force-with-lease would be worse than useless here: the fetch would
+          # refresh the very ref the lease compares against, so the lease would
+          # always pass. Asking `ls-remote` and pinning the answer keeps the
+          # check meaningful.
+          REMOTE_SHA="$(git ls-remote origin "refs/heads/$BRANCH" | cut -f1)"
+
+          if [ -z "$REMOTE_SHA" ]; then
+            # First run: the branch does not exist, so there is nothing to
+            # overwrite and no lease is needed.
+            git push --set-upstream origin "$BRANCH"
+          else
+            git push --force-with-lease="refs/heads/$BRANCH:$REMOTE_SHA" --set-upstream origin "$BRANCH"
+          fi
+
+      - name: Open or refresh the pull request
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          {
+            cat "$RUNNER_TEMP/recipe-sync.md"
+            echo
+            echo "---"
+            echo
+            echo "\`npm run verify\` — typecheck, build, link integrity and accessibility —"
+            echo "passed on this commit in the run that opened it."
+            echo
+            echo "GitHub does not run \`ci.yml\` for pull requests opened with \`GITHUB_TOKEN\`,"
+            echo "which is why the gates ran in this job instead. See the note at the top of"
+            echo "\`.github/workflows/sync-recipes.yml\`."
+          } > "$RUNNER_TEMP/pull-request-body.md"
+
+          TITLE="Recipe sync from the HealThaali YouTube channel"
+
+          # Only an *open* pull request for this branch is reused. Looking the
+          # branch up without the state filter would find the previous, already
+          # merged pull request and edit that one instead of opening a new one.
+          EXISTING="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+
+          if [ -n "$EXISTING" ]; then
+            echo "Refreshing pull request #$EXISTING"
+            gh pr edit "$EXISTING" --title "$TITLE" --body-file "$RUNNER_TEMP/pull-request-body.md"
+          else
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "$TITLE" \
+              --body-file "$RUNNER_TEMP/pull-request-body.md"
+          fi

@@ -65,6 +65,9 @@ export const icons = {
   /* ---------- security --------------------------------------------------- */
   shield: '<path d="M12 3.2 19 6v6c0 4.6-2.9 7.8-7 9.2-4.1-1.4-7-4.6-7-9.2V6Z"/><path d="m9 12 2 2 4-4"/>',
   lock: '<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+  /** Waste bin, for the account-deletion route. */
+  trash:
+    '<path d="M4.5 6.5h15"/><path d="M9.5 6.5V4.8a1.3 1.3 0 0 1 1.3-1.3h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.2 6.5 7 19.2a1.6 1.6 0 0 0 1.6 1.5h6.8a1.6 1.6 0 0 0 1.6-1.5l.8-12.7"/><path d="M10.4 10.5v6"/><path d="M13.6 10.5v6"/>',
 
   /* ---------- people / settings ----------------------------------------- */
   user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c0-4 3.6-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/>',
@@ -85,6 +88,8 @@ export const icons = {
   monitorSmall:
     '<rect x="2.5" y="4.5" width="19" height="12.5" rx="2"/><path d="M9 20.5h6"/><path d="M12 17v3.5"/>',
   info: '<circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.5"/><circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none"/>',
+  /** Envelope, for mailto links. */
+  mail: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.9 7.4 8.1 5.4 8.1-5.4"/>',
   play: '<path d="M8 5.2v13.6L19 12Z"/>',
 } as const;
 

@@ -1,0 +1,208 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Button from "../components/Button.astro";
+import DownloadCTA from "../components/DownloadCTA.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+import RecipeCard from "../components/RecipeCard.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+
+import {
+  formatRecipeDate,
+  hasRecipes,
+  recipeChannel,
+  recipes,
+  recipesUpdatedAt,
+} from "../data/recipes";
+import { absoluteUrl, site, siteUrl } from "../data/site";
+
+const social = (name: string) => site.socials.find((entry) => entry.name === name);
+
+const breadcrumbs = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+    { "@type": "ListItem", position: 2, name: "Recipes", item: `${siteUrl}/recipes` },
+  ],
+};
+
+/*
+  Structured data for the videos, generated from the same snapshot the cards
+  are. Only fields the feed actually supplies are emitted — no duration, no
+  rating, no view count, because inventing or guessing those would be worse
+  than omitting them.
+
+  `thumbnailUrl` points at our own optimised copy rather than at i.ytimg.com, so
+  the URL is one we host and know exists.
+*/
+const videoList = hasRecipes
+  ? {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Recipes from ${site.name}`,
+      numberOfItems: recipes.length,
+      itemListElement: recipes.map((recipe, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "VideoObject",
+          name: recipe.title,
+          description: recipe.description,
+          thumbnailUrl: absoluteUrl(recipe.image.src),
+          uploadDate: recipe.published,
+          url: recipe.url,
+          contentUrl: recipe.url,
+          embedUrl: `https://www.youtube.com/embed/${recipe.id}`,
+          publisher: { "@type": "Organization", name: site.name, url: siteUrl },
+        },
+      })),
+    }
+  : null;
+---
+
+<BaseLayout
+  title="Recipes"
+  description="Zero-oil and high-protein Indian recipes from the HealThaali kitchen — every dish is cooked on video, with the technique shown step by step."
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+    {videoList && <JsonLd data={videoList} />}
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Recipes
+      </p>
+      <h1 class="page-hero__title">The recipes behind the plan</h1>
+      <p class="page-hero__lead">
+        {site.name} is built on everyday home cooking made lighter — the same dishes, cooked with
+        less oil and more protein. Every recipe below is cooked on camera, so you can see the
+        technique rather than take it on trust.
+      </p>
+    </div>
+  </section>
+
+  {
+    hasRecipes ? (
+      <>
+        <section class="section" aria-labelledby="recipes-all">
+          <div class="container">
+            <SectionHeading
+              eyebrow={`${recipes.length} recipe${recipes.length === 1 ? "" : "s"}`}
+              eyebrowIcon="bowl"
+              title="Every recipe we have published"
+              lead="Newest first. Each card opens the video on YouTube, where the full method is shown."
+              id="recipes-all"
+            />
+
+            <ul class="card-grid card-grid--3 mt-2xl list-reset">
+              {recipes.map((recipe) => (
+                <RecipeCard recipe={recipe} />
+              ))}
+            </ul>
+
+            <div class="recipe-source mt-2xl">
+              <span>
+                Videos published by{" "}
+                <a
+                  class="recipe-source__link"
+                  href={recipeChannel.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {recipeChannel.title}
+                  <Icon name="arrowUpRight" size={14} />
+                </a>{" "}
+                on YouTube.
+              </span>
+              <span>List last updated {formatRecipeDate(recipesUpdatedAt)}.</span>
+            </div>
+          </div>
+        </section>
+      </>
+    ) : (
+      <section class="section" aria-labelledby="recipes-empty">
+        <div class="container container--narrow">
+          <SectionHeading
+            eyebrow="Coming soon"
+            eyebrowIcon="bowl"
+            title="The recipe library is being filmed"
+            lead="Nothing is listed here yet."
+            id="recipes-empty"
+          />
+
+          <div class="prose mt-xl">
+            <p>
+              The recipes are not ready to publish on this page yet, and {site.name} does not list
+              dishes it cannot show you. Our cooking videos go up on YouTube and Instagram as
+              <strong>@healthaali</strong> first.
+            </p>
+          </div>
+
+          <div class="cluster mt-xl">
+            {
+              site.socials.map((entry) => (
+                <Button
+                  href={entry.href}
+                  variant="secondary"
+                  external
+                  icon="arrowUpRight"
+                  iconPosition="end"
+                >
+                  {entry.name} — @healthaali
+                </Button>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section section--alt" aria-labelledby="recipes-app">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="From video to plate"
+        eyebrowIcon="utensils"
+        title="Watching is free. Tracking is where it adds up"
+        align="center"
+        id="recipes-app"
+      />
+
+      <div class="prose mt-xl">
+        <p>
+          The videos show the cooking. The app is what turns it into a plan: it puts the dish on
+          your week, counts the protein, carbs, fat and fibre against your own targets, and
+          remembers what you liked so the next suggestion is better. Step-by-step recipes with a
+          Start Cooking mode live in the app rather than on this page.
+        </p>
+        {social("Instagram") && (
+          <p>
+            Shorter recipes and daily ideas go up on{" "}
+            <a href={social("Instagram")!.href} target="_blank" rel="noopener noreferrer">
+              Instagram
+            </a>
+            , where {site.name} posts as <strong>@healthaali</strong>.
+          </p>
+        )}
+      </div>
+
+      <div class="cluster mt-2xl" style="justify-content: center">
+        <Button href="/features" icon="arrowRight" iconPosition="end">
+          See what the app does
+        </Button>
+        <Button href="/android" variant="secondary" icon="smartphone">
+          Get the Android app
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <DownloadCTA
+    title="Cook it, then log it"
+    text="The recipes are free to watch. The app is where the plan, the numbers and the progress live."
+  />
+</BaseLayout>

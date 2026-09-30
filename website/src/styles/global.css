@@ -229,6 +229,75 @@ ol[role="list"],
   border-top: 1px solid var(--border);
 }
 
+/* ---------- prose: blog post bodies ------------------------------------- */
+.prose blockquote {
+  margin-inline-start: 0;
+  padding-inline-start: var(--space-lg);
+  border-inline-start: 3px solid var(--brand-primary);
+  color: var(--muted-strong);
+}
+
+.prose ul > li::marker,
+.prose ol > li::marker {
+  color: var(--muted);
+}
+
+.prose code {
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-xs);
+  background-color: var(--code-bg);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--foreground);
+}
+
+/*
+  Code blocks keep Shiki's own colour scheme rather than the site palette. It
+  is not a compromise: the theme background and its token colours always
+  contrast with each other, so a block cannot become unreadable when the site
+  colour scheme flips. Only the furniture around it follows the site.
+*/
+.prose pre {
+  overflow-x: auto;
+  padding: var(--space-lg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+/* Undo the inline-code treatment inside a block. */
+.prose pre code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+  color: inherit;
+}
+
+.prose img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.prose th,
+.prose td {
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+}
+
+.prose th {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
 /* ---------- misc -------------------------------------------------------- */
 hr {
   border: none;

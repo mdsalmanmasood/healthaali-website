@@ -1,0 +1,66 @@
+---
+import { Image } from "astro:assets";
+import Icon from "./Icon.astro";
+import { formatRecipeDate, type Recipe } from "../data/recipes";
+
+interface Props {
+  recipe: Recipe;
+}
+
+const { recipe } = Astro.props;
+---
+
+{/*
+  One link per card.
+
+  The title itself is the link, and a `::after` overlay makes the whole card a
+  click target. That is deliberate rather than wrapping the card in an <a>: a
+  wrapper would make the accessible name the concatenation of the date, the
+  title, the teaser and the call to action, and it would leave no real heading
+  in the list. Here the name is the title, and the title is an <h3> a screen
+  reader can navigate by.
+
+  There is no aria-label anywhere on the link, on purpose. An explicit label
+  would have to contain every visible string in the card or axe's
+  `label-content-name-mismatch` rule flags it — the same rule that caught the
+  desktop brand link on this site. Letting the content name the link avoids the
+  whole class of bug.
+*/}
+<li class="recipe-card">
+  <div class="recipe-card__media">
+    <Image
+      src={recipe.image}
+      alt=""
+      widths={[240, 400, 800]}
+      sizes="(max-width: 639px) 88vw, (max-width: 1023px) 44vw, 350px"
+      loading="lazy"
+      decoding="async"
+      class="recipe-card__img"
+    />
+    <span class="recipe-card__play" aria-hidden="true">
+      <Icon name="play" size={18} />
+    </span>
+  </div>
+
+  <div class="recipe-card__body">
+    <p class="recipe-card__meta">
+      <time datetime={recipe.published.slice(0, 10)}>{formatRecipeDate(recipe.published)}</time>
+      <span aria-hidden="true">·</span>
+      YouTube
+    </p>
+
+    <h3 class="recipe-card__title">
+      <a class="recipe-card__link" href={recipe.url} target="_blank" rel="noopener noreferrer">
+        {recipe.title}
+        <span class="sr-only"> (opens on YouTube in a new tab)</span>
+      </a>
+    </h3>
+
+    {recipe.summary && <p class="recipe-card__text">{recipe.summary}</p>}
+
+    <p class="recipe-card__cta" aria-hidden="true">
+      Watch on YouTube
+      <Icon name="arrowUpRight" size={15} />
+    </p>
+  </div>
+</li>

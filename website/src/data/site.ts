@@ -11,6 +11,38 @@
 const clean = (value: string | undefined, fallback = "") =>
   (value ?? fallback).trim().replace(/\/+$/, "");
 
+/**
+ * A value that has a real default: an unset *or blank* environment variable
+ * falls back rather than silently removing the fact.
+ *
+ * `clean()` strips a trailing slash, which is exactly right for URLs and
+ * actively wrong for an email address — a blank PUBLIC_CONTACT_EMAIL used to
+ * hide the address from every page. For facts that are known (the support inbox
+ * exists) the useful default is the fact itself.
+ */
+const nonEmpty = (value: string | undefined, fallback: string) => {
+  const cleaned = (value ?? "").trim();
+  return cleaned.length > 0 ? cleaned : fallback;
+};
+
+/**
+ * Where the business is based, as structured parts.
+ *
+ * Held apart from the display string so one fact feeds both the prose on
+ * `/privacy` and `/terms` and the `address` on the site-wide `Organization`
+ * node. A street address is not stored, because none is published.
+ */
+export const legalAddress = {
+  locality: "Bengaluru",
+  region: "Karnataka",
+  country: "India",
+  /** ISO 3166-1 alpha-2, which is the form schema.org wants for `addressCountry`. */
+  countryCode: "IN",
+} as const;
+
+/** The same location as it reads in prose: “Bengaluru, Karnataka, India”. */
+export const legalLocationLabel = `${legalAddress.locality}, ${legalAddress.region}, ${legalAddress.country}`;
+
 /** Canonical origin (no trailing slash). */
 export const siteUrl = clean(import.meta.env.PUBLIC_SITE_URL, "https://healthaali.in") || "https://healthaali.in";
 
@@ -20,8 +52,18 @@ export const webAppUrl = clean(import.meta.env.PUBLIC_WEBAPP_URL);
 /** Google Play listing, if it exists yet. */
 export const androidUrl = clean(import.meta.env.PUBLIC_ANDROID_URL);
 
-/** Support address, if one has been set up. */
-export const contactEmail = clean(import.meta.env.PUBLIC_CONTACT_EMAIL);
+/**
+ * Support address.
+ *
+ * `info@healthaali.in` is the real, confirmed inbox — it is the published
+ * contact point, so it is the default rather than a placeholder. Override it
+ * with PUBLIC_CONTACT_EMAIL if a different address should be published; leaving
+ * that variable blank keeps this one.
+ */
+export const contactEmail = nonEmpty(import.meta.env.PUBLIC_CONTACT_EMAIL, "info@healthaali.in");
+
+/** Always true today. Kept so pages that branch on it stay explicit and typed. */
+export const hasContactEmail = contactEmail.length > 0;
 
 /** Contact form endpoint (Formspree / Basin / a Worker). Empty = not wired up. */
 export const contactEndpoint = clean(import.meta.env.PUBLIC_CONTACT_ENDPOINT);
@@ -64,13 +106,44 @@ export const site = {
   /** Set the launch year in one place. */
   copyrightFrom: 2026,
 
-  /** Clearly-marked legal placeholders. Replace with verified details. */
-  placeholders: {
-    legalEntity: "[legal entity name — to be confirmed]",
-    jurisdiction: "[jurisdiction — to be confirmed]",
-    address: "[registered address — to be confirmed]",
-    effectiveDate: "[effective date — to be confirmed]",
+  /**
+   * Legal identity published on `/privacy` and `/terms`.
+   *
+   * HealThaali is run by an individual, not a registered company, so there is no
+   * corporate suffix and no registered office to publish — `location` names the
+   * city, not a street address, because none is published anywhere. Every value
+   * here was supplied by the operator; none is inferred from the brand assets.
+   */
+  legal: {
+    /** Name that appears as the service provider / data controller. */
+    entity: "HealThaali",
+    /** How the business is run, in the operator's own words. */
+    entityType: "an independent business operated by an individual",
+    /**
+     * Where it is based. Deliberately no street address — none is published.
+     *
+     * Derived from `legalAddress` rather than typed again, so the sentence a
+     * visitor reads and the `address` on the site-wide `Organization` node can
+     * never disagree. Use `legalAddress` for structured data.
+     */
+    location: legalLocationLabel,
+    /** Structured form of `location`, for the Organization node's postal address. */
+    address: legalAddress,
+    /** Governing law for the terms. */
+    law: "India",
+    /** Forum with exclusive jurisdiction. */
+    forum: "the courts at Bengaluru, Karnataka",
+    // No effective date here on purpose: the date shown at the top of a legal
+    // document is its most recent version, so it lives with the version history
+    // in `legal-history.ts`. Two copies would eventually disagree.
   },
+
+  /**
+   * The published contact inbox, usable before any form endpoint exists.
+   * Declared here as well as exported above so `site` stays a single readable
+   * description of the organisation.
+   */
+  contactEmail,
 } as const;
 
 /** True when a real destination exists (so the UI can render "Coming soon"). */
