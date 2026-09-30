@@ -1,0 +1,247 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import Button from "../../components/Button.astro";
+import DownloadCTA from "../../components/DownloadCTA.astro";
+import Icon from "../../components/Icon.astro";
+import JsonLd from "../../components/JsonLd.astro";
+import RecipeCard from "../../components/RecipeCard.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import VideoEmbed from "../../components/VideoEmbed.astro";
+
+import { medicalDisclaimer } from "../../data/features";
+import {
+  descriptionParagraphs,
+  formatRecipeDate,
+  isEmbeddable,
+  neighbouringRecipes,
+  recipeChannel,
+  recipeListId,
+  recipes,
+  recipeVideoTitle,
+  sourceName,
+  type Recipe,
+} from "../../data/recipes";
+import { organizationId } from "../../data/schema";
+import { absoluteUrl, site } from "../../data/site";
+import { breadcrumbSchema, type Crumb } from "../../lib/breadcrumbs";
+import { youtubeEmbedUrl } from "../../lib/youtube";
+
+/**
+ * One page per dish, addressed by video id — see `recipePath` in
+ * src/data/recipes.ts for why the id and not the title.
+ *
+ * Every value below comes from the generated snapshot, which comes from the
+ * channel's own feed. Nothing here is written by hand and nothing is inferred:
+ * if the channel has not published a description, the page has no description
+ * section rather than a paragraph about a dish nobody has cooked here.
+ */
+export function getStaticPaths() {
+  return recipes.map((recipe) => ({
+    params: { id: recipe.id },
+    props: { recipe },
+  }));
+}
+
+interface Props {
+  recipe: Recipe;
+}
+
+const { recipe } = Astro.props;
+
+const paragraphs = descriptionParagraphs(recipe);
+const embeddable = isEmbeddable(recipe);
+const related = neighbouringRecipes(recipe, 3);
+
+/* The visible trail and the BreadcrumbList are both built from this array. */
+const crumbs: Crumb[] = [
+  { name: "Home", href: "/" },
+  { name: "Recipes", href: "/recipes" },
+  { name: recipe.title, href: `/recipes/${recipe.id}` },
+];
+const breadcrumbs = breadcrumbSchema(crumbs);
+
+/**
+ * The page's own meta description: the teaser the channel wrote, or the first
+ * line of its description, cut at a word rather than through one. Emoji are
+ * left alone — they are part of the published title, and stripping them here
+ * would describe the video as something it is not.
+ */
+const clamp = (text: string, max = 155): string => {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${lastSpace > 60 ? cut.slice(0, lastSpace) : cut}…`;
+};
+
+const metaDescription = clamp(paragraphs[0] ?? recipe.summary ?? recipe.title);
+
+/**
+ * The video, described from the snapshot.
+ *
+ * Only fields the feed actually supplies: no duration, no view count, no
+ * rating, no `recipeIngredient` assembled out of a title. `contentUrl` and
+ * `url` are the video's own published address; `embedUrl` is the
+ * privacy-preserving host the player uses, which is true whether or not the
+ * visitor ever presses play.
+ *
+ * `isPartOf` points at the ItemList on /recipes, so a crawler reads this page as
+ * one dish in a library rather than as a video that happens to exist.
+ */
+const videoSchema = embeddable
+  ? {
+      "@type": "VideoObject",
+      name: recipe.title,
+      description: recipe.description,
+      thumbnailUrl: absoluteUrl(recipe.image.src),
+      uploadDate: recipe.published,
+      url: recipe.url,
+      contentUrl: recipe.url,
+      embedUrl: youtubeEmbedUrl(recipe.id),
+      inLanguage: "en",
+      isPartOf: { "@id": recipeListId },
+      publisher: { "@id": organizationId },
+    }
+  : null;
+---
+
+<BaseLayout
+  title={recipe.title}
+  description={metaDescription}
+  image={absoluteUrl(recipe.image.src)}
+  imageAlt={`The thumbnail image published with the video “${recipe.title}”.`}
+  imageWidth={recipe.image.width}
+  imageHeight={recipe.image.height}
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+    {videoSchema && <JsonLd data={videoSchema} />}
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container container--narrow">
+      <Breadcrumbs crumbs={crumbs} />
+
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        Recipe
+      </p>
+
+      <h1 class="page-hero__title">{recipe.title}</h1>
+
+      <p class="post-meta">
+        <time datetime={recipe.published.slice(0, 10)}>
+          {formatRecipeDate(recipe.published)}
+        </time>
+        <span aria-hidden="true">·</span>
+        <span>Published on {sourceName(recipe)}</span>
+      </p>
+
+      {recipe.summary && <p class="page-hero__lead">{recipe.summary}</p>}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container container--narrow">
+      {
+        embeddable ? (
+          <VideoEmbed
+            id={recipe.id}
+            href={recipe.url}
+            title={recipeVideoTitle(recipe)}
+            label="Play the video"
+            caption={`Filmed for ${recipeChannel.title}.`}
+          />
+        ) : (
+          /*
+            No player, because there is no id to embed: an Instagram entry is
+            added to the snapshot by hand and this site cannot host its player.
+            The thumbnail does not exist for these either, so the page offers the
+            link and says where it goes.
+          */
+          <p>
+            <Button
+              href={recipe.url}
+              variant="secondary"
+              external
+              icon="arrowUpRight"
+              iconPosition="end"
+            >
+              Watch on {sourceName(recipe)}
+            </Button>
+          </p>
+        )
+      }
+
+      {
+        paragraphs.length > 0 && (
+          <div class="recipe-detail__notes mt-2xl">
+            <h2 class="recipe-detail__notes-title">As published with the video</h2>
+            <div class="recipe-detail__notes-body">
+              {paragraphs.map((line) => (
+                <p>{line}</p>
+              ))}
+            </div>
+          </div>
+        )
+      }
+
+      <div class="prose mt-xl">
+        <h2>What this page is, and what it is not</h2>
+        <p>
+          The video above is the dish as it was cooked and published. The section before this one is
+          the description that was published with that video, in the channel's own words — including
+          any amounts it states, which this page does not recalculate and cannot verify for your
+          portions.
+        </p>
+        <p>
+          There is no ingredient table and no calorie count here, because nothing on this site measures
+          a dish it has not cooked. In the app, a dish is counted against your own targets and the
+          portions you actually served, which is the only version of those numbers that is about you.
+        </p>
+        <p>
+          Every recipe in this library is listed on{" "}
+          <a href="/recipes">the recipes page</a>, and the app is described on{" "}
+          <a href="/features">the features page</a>.
+        </p>
+      </div>
+
+      <p class="notice mt-xl">{medicalDisclaimer}</p>
+
+      <p class="mt-xl">
+        <a class="link-arrow" href="/recipes">
+          <Icon name="arrowRight" size={15} />
+          All {recipes.length} recipes
+        </a>
+      </p>
+    </div>
+  </section>
+
+  {
+    related.length > 0 && (
+      <section class="section section--alt" aria-labelledby="related-recipes-title">
+        <div class="container">
+          <SectionHeading
+            eyebrow="More from the kitchen"
+            eyebrowIcon="bowl"
+            title="Other recipes"
+            lead={`The dishes published around this one. ${site.name} lists every recipe it has filmed.`}
+            id="related-recipes-title"
+          />
+
+          <ul class="card-grid card-grid--3 mt-2xl list-reset" role="list">
+            {related.map((entry) => (
+              <RecipeCard recipe={entry} />
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <DownloadCTA
+    title="Cook it, then log it"
+    text="The recipe is free to watch. The app is where the plate gets counted against your own targets."
+  />
+</BaseLayout>

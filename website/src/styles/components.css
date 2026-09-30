@@ -2025,10 +2025,13 @@ a.chip[aria-current="page"] {
 /* ==========================================================================
    Recipes
    --------------------------------------------------------------------------
-   Cards built from the generated YouTube snapshot (src/data/recipes.json).
-   The whole card is clickable but there is exactly one link in it — see
-   RecipeCard.astro for why the title is the link and an ::after overlay does
-   the rest.
+   Cards and dish pages, built from the generated YouTube snapshot
+   (src/data/recipes.json).
+
+   A card has two targets that do different things: the picture plays the video
+   on the page, and everything else opens the dish's own page. RecipeCard.astro
+   explains the construction; the `z-index` below is what makes the first of the
+   two reachable.
    ========================================================================== */
 
 .recipe-card {
@@ -2071,21 +2074,74 @@ a.chip[aria-current="page"] {
   object-fit: cover;
 }
 
-.recipe-card__play {
+/*
+  The video control, riding on the card's own thumbnail.
+
+  It covers the whole media box and is lifted above the card's `::after`
+  overlay. That z-index is the load-bearing part: the overlay spans the entire
+  card, so a control underneath it can be clicked in the DOM and never in
+  practice. Everything else on the card still opens the dish's page.
+
+  The same element is a link to YouTube before the player script runs and a
+  button that loads the player after, so the picture is never a dead click.
+*/
+.recipe-card__media > .yt-embed {
   position: absolute;
-  inset-block-end: 0.7rem;
-  inset-inline-start: 0.7rem;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-pill);
-  background-color: var(--scrim);
-  color: var(--on-scrim);
+  inset: 0;
+  z-index: 1;
 }
 
-.recipe-card__play svg {
-  margin-inline-start: 2px;
+.recipe-card__media .yt-embed__fallback,
+.recipe-card__media .yt-embed__play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.recipe-card__media .yt-embed__player {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  /*
+    Cleared on purpose. In its own player box the sunken background is what the
+    video sits in; here the box is already the dish's thumbnail, and an opaque
+    layer over it hides the picture the card is showing until the player loads.
+  */
+  background-color: transparent;
+}
+
+/* Bigger than the in-article badge: here it sits on a photograph and is the
+   card's only play affordance, so it has to read at a glance. */
+.recipe-card__media .yt-embed__play-icon {
+  width: 48px;
+  height: 48px;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.recipe-card__media .yt-embed__play:hover .yt-embed__play-icon,
+.recipe-card__media .yt-embed__fallback:hover .yt-embed__play-icon {
+  transform: scale(1.08);
+}
+
+/*
+  The button's label is the dish's title, which is printed in full directly
+  below the picture — so it is clipped here rather than shown twice. Clipped,
+  not `display: none`: a button with no accessible name is worse than a
+  duplicated one.
+*/
+.recipe-card__media .yt-embed__play-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .recipe-card__body {
@@ -2176,6 +2232,47 @@ a.chip[aria-current="page"] {
 
 .dark .recipe-source__link {
   color: var(--brand-primary-light);
+}
+
+/*
+  A dish's own page: the description that was published with the video.
+
+  Set apart from the site's own prose on purpose. Everything inside this panel
+  is the channel's text, reproduced as published, and it reads differently from
+  the surrounding copy — emoji, check marks, hashtagged lines — so the panel
+  says "this is the video's description" before anyone has to work it out.
+*/
+.recipe-detail__notes {
+  padding: 1.25rem 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  /* Not `--surface-sunken`: the muted label below measures 4.46:1 on that tint
+     and needs 4.5:1 at 13px, and the audit is right to say so. A card surface
+     clears it and reads as a panel either way. */
+  background-color: var(--surface-elevated);
+}
+
+.recipe-detail__notes-title {
+  margin: 0 0 var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.recipe-detail__notes-body {
+  display: grid;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--foreground-soft);
+  /* Descriptions carry long unbroken runs of hashtags and asterisked lines. */
+  overflow-wrap: anywhere;
+}
+
+.recipe-detail__notes-body p {
+  margin: 0;
 }
 
 /* ==========================================================================

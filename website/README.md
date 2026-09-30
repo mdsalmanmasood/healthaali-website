@@ -246,8 +246,9 @@ src/
 │   └── screens/          13 app screens cut from the product design board (generated)
 ├── components/           Header, MobileMenu, Footer, ThemeToggle, Logo, Button,
 │                         SectionHeading, FeatureCard, AppScreenshot, FAQ,
-│                         DownloadCTA, RecipeCard, PostCard, TopicRail, Breadcrumbs,
-│                         PostByline, TestimonialCard, Icon, JsonLd, PolicyHistory
+│                         DownloadCTA, RecipeCard, VideoEmbed, PostCard, TopicRail,
+│                         Breadcrumbs, PostByline, TestimonialCard, Icon, JsonLd,
+│                         PolicyHistory
 ├── content/
 │   └── blog/             one Markdown file per post (the file name is the URL)
 ├── data/                 site, navigation, features, faq, screenshots, testimonials,
@@ -260,10 +261,12 @@ src/
 │   ├── icons.ts          inline stroke icon set (no icon package)
 │   ├── breadcrumbs.ts    one crumb array -> visible trail + BreadcrumbList
 │   ├── post-slug.ts      the one slug function, shared by the loader and the data layer
+│   ├── youtube.ts        the embed host and the watch URL, in one place
 │   └── recipe-schema.mjs validator shared by the build and the sync script
-├── pages/                index, features, products, recipes, blog (+ rss.xml,
-│                         tag/[tag] and author/[author]), web-app, android, about,
-│                         contact, privacy, terms, delete-account, 404
+├── pages/                index, features, products, recipes (+ one page per dish at
+│                         recipes/[id]), blog (+ rss.xml, tag/[tag] and author/[author]),
+│                         web-app, android, about, contact, privacy, terms,
+│                         delete-account, 404
 ├── content.config.ts     blog collection: frontmatter schema + slug generation
 └── styles/               tokens.css, global.css, components.css, utilities.css
 public/                   favicon, icons, manifest, robots.txt, og-image
@@ -364,16 +367,35 @@ token-gated — so Instagram posts are added by hand to `recipes.json` with
 `"source": "instagram"`, and a sync preserves them. Scraping was rejected on purpose: it
 breaks without warning, which is the opposite of what a content page should do.
 
-### Videos are linked, not embedded
+### Each dish has a page, and the video plays there
 
-Every card opens the video on YouTube in a new tab. An embed on a listing page would mean an
-iframe and a third-party script per card, for content the site does not control. Linking is
-the honest, cheap, privacy-preserving option and keeps the security headers tight.
+Every recipe also gets its own page at `/recipes/<video id>`, built from the snapshot by
+[`src/pages/recipes/[id].astro`](src/pages/recipes/[id].astro). The card's play button starts
+the video where the thumbnail already is, and the dish's page plays it in a player box. Both
+are the same click-to-play figure a blog post writes by hand, rendered here from
+[`VideoEmbed.astro`](src/components/VideoEmbed.astro) instead: **nothing is requested from
+Google until the button is pressed**, and before the page's script runs the control is a plain
+link to the same video.
 
-Blog posts do embed videos, one at a time and deliberately — see
-[Videos in a post](#videos-in-a-post). The difference is not an inconsistency: on a post the
-video is the subject of a paragraph, and the play button means the price is paid only by the
-reader who wants it.
+The address is the video id, not the title. A title is whatever the channel called the video
+and can be edited on YouTube at any time, after which the next sync would rewrite it — and
+every URL, sitemap entry and inbound link built from it would move. The id cannot change. The
+words a reader searches for are in the page's title, heading and description, which is where
+they belong.
+
+The page states what it is: the video, the description that was published with it (hashtag
+lines removed, nothing else edited, and no ingredient list compiled out of a title), the same
+medical disclaimer the blog carries, and up to three other dishes. There is deliberately no
+calorie table and no `recipeIngredient` markup, because nothing on this site has measured a
+dish it has not cooked; the app is where a plate is counted against your own portions.
+
+A dish whose `source` is not `youtube` gets no player at all — the snapshot allows a hand-added
+Instagram entry, and there is no id this site can embed for one — so the card and the page link
+out to where the video really is, and name the site it is on.
+
+Structured data follows from that: the listing is an `ItemList` of `VideoObject` with a stable
+`@id`, and each dish's `VideoObject` is `isPartOf` it. The blog's embeds stay hand-written in
+Markdown — see [Videos in a post](#videos-in-a-post).
 
 ### Validation
 
@@ -512,9 +534,9 @@ number of complete figures, so an embed that renders but is missing from the str
 is a build failure too.
 
 That is also why `frame-src https://www.youtube-nocookie.com` is in the CSP and why the
-player's host is not something a post can choose. `/recipes` still links out rather than
-embedding — see [Videos are linked, not embedded](#videos-are-linked-not-embedded) for the
-reason that page makes the other choice.
+player's host is not something a post can choose. Recipe cards and dish pages use the same
+figure, from a component rather than from Markdown — see
+[Each dish has a page](#each-dish-has-a-page-and-the-video-plays-there) for what those add.
 
 The structured data is derived from the embeds rather than repeated in frontmatter: one
 `VideoObject` per video, inside the post's `BlogPosting`. If the id is one of the channel's
@@ -747,7 +769,8 @@ Light, dark and system are all supported:
   - `SoftwareApplication` on the homepage, `BreadcrumbList` on inner pages,
     `Blog` on the listing, `BlogPosting` on each post, `CollectionPage` on each
     tag page, `ProfilePage` on each author page, `ContactPage` on `/contact`,
-    `ItemList` of `VideoObject` on `/recipes`
+    `ItemList` of `VideoObject` on `/recipes` and one `VideoObject` on each
+    dish's page, which is `isPartOf` that list by `@id`
   - **A post is described as what it is**: `wordCount`, `articleSection` and
     `keywords` from the post itself, an `ImageObject` with the cover's real
     dimensions, `author` from the author registry, `publisher` and `isPartOf`
@@ -894,9 +917,13 @@ Two things in that CSP are deliberate and load-bearing:
   `PUBLIC_CONTACT_ENDPOINT`, which does not exist yet, so any value would be a guess
   that could silently break the form the day you wire it up. `public/_headers`
   contains the exact line to add once the endpoint is real.
-- **There is no `frame-src` and no YouTube embed.** The recipe videos are linked, not
-  embedded, so no third-party iframe or script is ever allowed on the page — see
-  **Recipes** above.
+- **`frame-src` allows exactly one host: `https://www.youtube-nocookie.com`.** A video
+  can be played on a blog post, a recipe card and a dish's page, and that is the only frame
+  any of them may load. `youtube-nocookie.com` sets no cookie until the video is played, and
+  the player is fetched only after the reader presses play — so no third-party script or
+  frame is requested while a page loads, and `script-src` stays `'self'` plus Cloudflare's
+  beacon. What that means for a reader's data is stated on `/privacy`, and the version
+  history there records when it was added.
 
 ### Verified Lighthouse results
 

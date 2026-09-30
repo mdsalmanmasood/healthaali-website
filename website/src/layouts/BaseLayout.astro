@@ -24,6 +24,17 @@ interface Props {
    * rather than a neutral choice.
    */
   imageAlt?: string;
+  /**
+   * Real pixel dimensions of `image`, for the `og:image:width`/`height` pair.
+   *
+   * These are declared to social platforms so the card can be laid out before
+   * the image is fetched, which means a wrong pair is worse than none: a dish
+   * page passes the dimensions of the thumbnail it actually shares, instead of
+   * inheriting the 1200x630 of the site-wide card (its own is 800x450, which a
+   * hardcoded pair would have misdescribed on every one of them).
+   */
+  imageWidth?: number;
+  imageHeight?: number;
   /** `article` for blog posts and other dated writing, `website` otherwise. */
   type?: "website" | "article";
   /** Override the canonical path/URL (defaults to the current URL). */
@@ -37,6 +48,8 @@ const {
   description,
   image = "/og-image.jpg",
   imageAlt,
+  imageWidth = 1200,
+  imageHeight = 630,
   type = "website",
   canonical,
   noindex = false,
@@ -75,8 +88,8 @@ const ogImage = /^https?:\/\//.test(image) ? image : absoluteUrl(image);
     {canonicalUrl ? <meta property="og:url" content={canonicalUrl} /> : null}
     <meta property="og:image" content={ogImage} />
     {imageAlt ? <meta property="og:image:alt" content={imageAlt} /> : null}
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image:width" content={String(imageWidth)} />
+    <meta property="og:image:height" content={String(imageHeight)} />
     <meta property="og:locale" content="en_IN" />
 
     <!-- Twitter -->
@@ -182,12 +195,13 @@ const ogImage = /^https?:\/\//.test(image) ? image : absoluteUrl(image);
     {/*
       Click-to-play YouTube embeds.
 
-      A post embeds a video as a <figure class="yt-embed" data-yt="…">, which
-      the Markdown carries as plain HTML. Until someone presses play, this page
-      makes no request to any Google host: no player script, no thumbnail, no
-      cookie. The button below is built here because JavaScript is what can
-      build it — without it the figure's plain <a> to the same video still
-      works, which is why that link is in the Markdown and not generated.
+      A page embeds a video as a <figure class="yt-embed" data-yt="…"> — from
+      the Markdown of a post, or from components/VideoEmbed.astro on a recipe
+      card and a dish's own page. Until someone presses play, this page makes
+      no request to any Google host: no player script, no thumbnail, no cookie.
+      The button below is built here because JavaScript is what can build it —
+      without it the figure's plain <a> to the same video still works, which is
+      why that link is in the markup and not generated.
 
       The handler is registered on the button it creates, and re-runs on
       `astro:page-load` so it also applies after a client-side navigation. It is
@@ -229,6 +243,10 @@ const ogImage = /^https?:\/\//.test(image) ? image : absoluteUrl(image);
         const fallback = figure.querySelector(".yt-embed__fallback");
         if (!title || !fallback) return;
 
+        // The player keeps the descriptive title; the button may say something
+        // shorter, because on a card the title is already printed underneath.
+        const buttonText = figure.dataset.ytLabel || title;
+
         const shape = figure.dataset.ytShape === "vertical" ? "vertical" : "wide";
 
         const player = document.createElement("div");
@@ -245,8 +263,8 @@ const ogImage = /^https?:\/\//.test(image) ? image : absoluteUrl(image);
 
         const label = document.createElement("span");
         label.className = "yt-embed__play-label";
-        // textContent, never innerHTML: the title comes from the Markdown.
-        label.textContent = title;
+        // textContent, never innerHTML: this text comes from the page.
+        label.textContent = buttonText;
 
         button.append(glyph, label);
         button.addEventListener("click", () => loadPlayer(figure, player));

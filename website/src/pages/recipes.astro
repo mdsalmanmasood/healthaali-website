@@ -11,6 +11,7 @@ import {
   formatRecipeDate,
   hasRecipes,
   recipeChannel,
+  recipeListId,
   recipes,
   recipesUpdatedAt,
 } from "../data/recipes";
@@ -35,11 +36,16 @@ const breadcrumbs = {
 
   `thumbnailUrl` points at our own optimised copy rather than at i.ytimg.com, so
   the URL is one we host and know exists.
+
+  The list carries the `@id` a dish's own page points back at with `isPartOf`,
+  so the library and its entries are one statement rather than fifteen.
 */
 const videoList = hasRecipes
   ? {
       "@context": "https://schema.org",
       "@type": "ItemList",
+      "@id": recipeListId,
+      url: absoluteUrl("/recipes"),
       name: `Recipes from ${site.name}`,
       numberOfItems: recipes.length,
       itemListElement: recipes.map((recipe, index) => ({
@@ -79,8 +85,9 @@ const videoList = hasRecipes
       <h1 class="page-hero__title">The recipes behind the plan</h1>
       <p class="page-hero__lead">
         {site.name} is built on everyday home cooking made lighter — the same dishes, cooked with
-        less oil and more protein. Every recipe below is cooked on camera, so you can see the
-        technique rather than take it on trust.
+        less oil and more protein. Every recipe below is cooked on camera and plays on this page,
+        so you can see the technique rather than take it on trust. Each dish also has its own page,
+        with the description published alongside the video.
       </p>
     </div>
   </section>
@@ -94,7 +101,7 @@ const videoList = hasRecipes
               eyebrow={`${recipes.length} recipe${recipes.length === 1 ? "" : "s"}`}
               eyebrowIcon="bowl"
               title="Every recipe we have published"
-              lead="Newest first. Each card opens the video on YouTube, where the full method is shown."
+              lead="Newest first. The play button on a card starts the video here; the dish's name opens its own page, where the video and the description published with it are."
               id="recipes-all"
             />
 

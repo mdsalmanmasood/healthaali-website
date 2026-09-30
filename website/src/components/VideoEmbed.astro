@@ -1,0 +1,86 @@
+---
+import Icon from "./Icon.astro";
+
+/**
+ * A video that is played on this site rather than followed to YouTube.
+ *
+ * This renders the same `figure` a blog post writes by hand in Markdown — same
+ * classes, same `data-yt*` attributes — so one script in `BaseLayout.astro`
+ * upgrades all of them alike. That script is the whole point: the figure is
+ * inert markup until it runs, and it makes no request to any Google host until
+ * the visitor presses play (see `public/_headers` for the `frame-src` this
+ * needs, and the note in the layout for why the fallback link is real).
+ *
+ * Two shapes, one for each place a video appears:
+ *
+ *   - `block` draws its own bordered player box, for a page whose subject is
+ *     the video (a dish's own page).
+ *   - `card` draws nothing: it rides on a thumbnail the caller has already
+ *     placed and is absolutely positioned over it by CSS. That is why the
+ *     fallback here is a play badge instead of a line of text — on a card, the
+ *     thumbnail is the affordance and the badge is the button.
+ *
+ * The fallback link is not decoration. Before the script runs (or if it never
+ * does), it is the only way to the video, and it goes to the same video the
+ * player would have loaded.
+ */
+interface Props {
+  /** YouTube video id, 11 characters. */
+  id: string;
+  /** Accessible name of the player: what the video is, not what it is about. */
+  title: string;
+  /** Where the fallback link goes — the video's own page on YouTube. */
+  href: string;
+  /**
+   * Text for the button the script builds. Defaults to `title`, which reads
+   * well in an article but not on a card, where "play this" is the useful verb.
+   */
+  label?: string;
+  variant?: "block" | "card";
+  /** `vertical` for a Short; the frame a player is drawn in, not the video's. */
+  shape?: "wide" | "vertical";
+  /** Visible caption under the player. Omitted when there is nothing to add. */
+  caption?: string;
+  class?: string;
+}
+
+const {
+  id,
+  title,
+  href,
+  label,
+  variant = "block",
+  shape = "wide",
+  caption,
+  class: className = "",
+} = Astro.props;
+
+const isCard = variant === "card";
+---
+
+<figure
+  class:list={["yt-embed", `yt-embed--${variant}`, className]}
+  data-yt={id}
+  data-yt-title={title}
+  data-yt-label={label}
+  data-yt-shape={shape}
+>
+  <a class="yt-embed__fallback" href={href} target="_blank" rel="noopener noreferrer">
+    {
+      isCard ? (
+        <>
+          <span class="yt-embed__play-icon" aria-hidden="true">
+            <Icon name="play" size={22} />
+          </span>
+          {/* The badge is the whole control, so the link needs its own name.
+              The action and the destination are both stated. */}
+          <span class="sr-only">Play “{title}” (the video opens on YouTube)</span>
+        </>
+      ) : (
+        <>Watch “{title}” on YouTube</>
+      )
+    }
+  </a>
+
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>

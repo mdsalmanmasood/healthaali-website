@@ -1,27 +1,52 @@
 ---
 import { Image } from "astro:assets";
 import Icon from "./Icon.astro";
-import { formatRecipeDate, type Recipe } from "../data/recipes";
+import VideoEmbed from "./VideoEmbed.astro";
+import {
+  formatRecipeDate,
+  isEmbeddable,
+  recipePath,
+  recipeVideoLabel,
+  recipeVideoTitle,
+  sourceName,
+  type Recipe,
+} from "../data/recipes";
 
 interface Props {
   recipe: Recipe;
 }
 
 const { recipe } = Astro.props;
+
+const href = recipePath(recipe);
+const embeddable = isEmbeddable(recipe);
 ---
 
 {/*
-  One link per card.
+  One destination, one control.
 
-  The title itself is the link, and a `::after` overlay makes the whole card a
-  click target. That is deliberate rather than wrapping the card in an <a>: a
-  wrapper would make the accessible name the concatenation of the date, the
-  title, the teaser and the call to action, and it would leave no real heading
-  in the list. Here the name is the title, and the title is an <h3> a screen
-  reader can navigate by.
+  The title is the link, and a `::after` overlay makes the whole body a click
+  target — so the card opens the dish's own page, where the video, the
+  description and the app links are. That is deliberate rather than wrapping the
+  card in an <a>: a wrapper would make the accessible name the concatenation of
+  the date, the title, the teaser and the call to action, and it would leave no
+  real heading in the list. Here the name is the title, and the title is an <h3>
+  a screen reader can navigate by.
 
-  There is no aria-label anywhere on the link, on purpose. An explicit label
-  would have to contain every visible string in the card or axe's
+  The media is the other control, and it does something different: it plays the
+  video here instead of navigating. It sits *above* the overlay (see the z-index
+  in the stylesheet), which is what keeps it reachable — a control underneath a
+  full-card overlay would be clickable in the DOM and unreachable in practice.
+  Before the script in BaseLayout builds its button, the same control is a plain
+  link to YouTube, so the thumbnail is never a dead click.
+
+  A dish whose video is not on YouTube (the snapshot allows a hand-added
+  Instagram entry) gets no player: there is no id this site can embed, so the
+  badge links out to where the video really is, and the card says which site
+  rather than pretending the video is playable here.
+
+  There is no aria-label anywhere on the title link, on purpose. An explicit
+  label would have to contain every visible string in the card or axe's
   `label-content-name-mismatch` rule flags it — the same rule that caught the
   desktop brand link on this site. Letting the content name the link avoids the
   whole class of bug.
@@ -37,30 +62,50 @@ const { recipe } = Astro.props;
       decoding="async"
       class="recipe-card__img"
     />
-    <span class="recipe-card__play" aria-hidden="true">
-      <Icon name="play" size={18} />
-    </span>
+
+    {
+      embeddable ? (
+        <VideoEmbed
+          id={recipe.id}
+          href={recipe.url}
+          title={recipeVideoTitle(recipe)}
+          label={recipeVideoLabel(recipe)}
+          variant="card"
+        />
+      ) : (
+        <a
+          class="yt-embed yt-embed--card"
+          href={recipe.url}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="yt-embed__play-icon" aria-hidden="true">
+            <Icon name="play" size={22} />
+          </span>
+          <span class="sr-only">
+            Watch “{recipe.title}” on {sourceName(recipe)} (opens in a new tab)
+          </span>
+        </a>
+      )
+    }
   </div>
 
   <div class="recipe-card__body">
     <p class="recipe-card__meta">
       <time datetime={recipe.published.slice(0, 10)}>{formatRecipeDate(recipe.published)}</time>
       <span aria-hidden="true">·</span>
-      YouTube
+      {sourceName(recipe)}
     </p>
 
     <h3 class="recipe-card__title">
-      <a class="recipe-card__link" href={recipe.url} target="_blank" rel="noopener noreferrer">
-        {recipe.title}
-        <span class="sr-only"> (opens on YouTube in a new tab)</span>
-      </a>
+      <a class="recipe-card__link" href={href}>{recipe.title}</a>
     </h3>
 
     {recipe.summary && <p class="recipe-card__text">{recipe.summary}</p>}
 
     <p class="recipe-card__cta" aria-hidden="true">
-      Watch on YouTube
-      <Icon name="arrowUpRight" size={15} />
+      Watch the video
+      <Icon name="play" size={15} />
     </p>
   </div>
 </li>
