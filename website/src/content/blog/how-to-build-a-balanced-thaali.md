@@ -2,6 +2,7 @@
 title: "How to build a balanced thaali you will actually eat again tomorrow"
 description: "Four jobs a plate has to do, how to judge the portions with your hands instead of a scale, and a worked 490-calorie lunch that carries about 40 grams of protein."
 publishedAt: 2026-09-18
+author: nehal-masood
 tags: ["Indian food", "Meal planning", "High protein"]
 ---
 

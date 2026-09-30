@@ -7,6 +7,8 @@
  * an author page appears with their first post and disappears when their last
  * one is unpublished. Nothing links to a page that does not exist.
  */
+import { Image } from "astro:assets";
+
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import Breadcrumbs from "../../../components/Breadcrumbs.astro";
 import Button from "../../../components/Button.astro";
@@ -17,6 +19,7 @@ import SectionHeading from "../../../components/SectionHeading.astro";
 import { blogId, blogPath, getPosts, type BlogPost } from "../../../data/blog";
 import {
   authorPath,
+  authorPortrait,
   authorSchemaNode,
   authorsUsedBy,
   type Author,
@@ -42,6 +45,14 @@ interface Props {
 }
 
 const { author, posts } = Astro.props;
+
+/*
+  The same file the byline draws, at the size a page can show it. Decorative
+  here as well: the <h1> directly below is the person's name, which is what a
+  screen reader needs to hear — describing the photograph as well would say the
+  same thing twice.
+*/
+const portrait = authorPortrait(author);
 
 const url = absoluteUrl(authorPath(author.id));
 const count = posts.length;
@@ -93,6 +104,21 @@ const profileSchema = {
   <section class="page-hero">
     <div class="container">
       <Breadcrumbs crumbs={crumbs} />
+
+      {
+        portrait && (
+          <Image
+            src={portrait}
+            alt=""
+            width={224}
+            height={224}
+            loading="eager"
+            decoding="async"
+            class="author-portrait"
+          />
+        )
+      }
+
       <h1 class="page-hero__title">{author.name}</h1>
       <p class="page-hero__lead">{author.role}</p>
       <p class="page-hero__lead">{author.bio}</p>

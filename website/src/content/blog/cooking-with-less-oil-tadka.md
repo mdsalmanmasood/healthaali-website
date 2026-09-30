@@ -2,6 +2,7 @@
 title: "Cooking with less oil: where the oil actually hides in an Indian kitchen"
 description: "A teaspoon of oil is about 40 calories, and most kitchens spend ten of them without noticing. Here is where the oil goes, what to change first, and how to keep the flavour while you do it."
 publishedAt: 2026-09-14
+author: nehal-masood
 tags: ["Zero oil", "Indian food", "Habits"]
 ---
 

@@ -572,21 +572,32 @@ Who wrote a post is data, not copy. [`src/data/authors.ts`](src/data/authors.ts)
 entry per author — name, `role`, a short `bio`, the profiles that belong to them, and
 whether they are the team or a named individual.
 
-Today there is exactly one entry, the team, typed as an `Organization`. That is the honest
-answer rather than a modest one: no individual byline has been supplied, and inventing a
-person, a portrait or a job title would be fabricating a claim about who wrote the page.
-Adding a real person is one entry with `type: "Person"` — every byline, author page and
-`BlogPosting.author` node follows from the array.
+There are two entries. **Nehal Masood** is typed as a `Person` and is who every post names
+today; **HealThaali Kitchen** is the team, typed as an `Organization`, and is the fallback
+for a post that names nobody. Every value in both entries was supplied by the person or the
+brand it describes — no invented portrait, job title or credential, and no `sameAs` pointing
+at the brand's accounts, because those are the brand's and not a person's.
+
+**A post states its own author.** `author: nehal-masood` in the frontmatter is the claim;
+the default is the team rather than the person, so a future post cannot be attributed to her
+by accident. A byline nobody wrote is the kind of claim this site avoids everywhere else.
 
 - `/blog/author/<id>` is generated for authors **with a published post**, from the posts
 themselves, so an author page cannot exist without a byline pointing at it or vice versa.
 - The page carries a `ProfilePage` whose `mainEntity` is the author, plus the posts as
   `hasPart`. `mainEntity` is built by the same function the byline uses, so the page a
   visitor reads and the entity a crawler reads cannot describe different people.
-- The byline has no portrait until one is supplied in `src/assets/authors/`. It shows a
-  monogram instead of a stand-in face.
-- A post's `author` is the full node, with `parentOrganization` for the team, so a crawler
-  can get from "HealThaali Kitchen wrote this" to the brand the rest of the site describes.
+- The byline shows the author's own photograph when one has been supplied, and a monogram —
+  their initials — instead of a stand-in face when none has; the schema carries no `image`
+  until a real photograph exists. Nehal Masood's portrait is supplied today — see
+  [`src/assets/authors/`](src/assets/authors/README.md) for the file and how it was made —
+  while the team byline, which has no picture of a person, still draws `HK`.
+- A post's `author` is the full node: `jobTitle` and `worksFor` for a person, pointing at the
+  site-wide `Organization`; `parentOrganization` for the team, so a crawler can get from
+  "HealThaali Kitchen wrote this" to the brand the rest of the site describes.
+- Adding a real photograph is two steps and no code: put the file in
+  `src/assets/authors/`, then name it in the entry's `portrait`. Naming one that is not on
+  disk fails the build with the list of files that do exist.
 
 ### Breadcrumbs
 

@@ -2,6 +2,7 @@
 title: "Weight loss with Indian food: what to change before you cut rice"
 description: "Two ways this usually fails, the change that does most of the work, why rice is not the villain, and what a week of steady progress actually looks like."
 publishedAt: 2026-09-26
+author: nehal-masood
 tags: ["Weight loss", "Indian food", "Meal planning"]
 ---
 

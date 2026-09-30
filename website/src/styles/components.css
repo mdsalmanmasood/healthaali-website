@@ -2436,6 +2436,21 @@ a.chip[aria-current="page"] {
   border-radius: var(--radius-pill);
 }
 
+/*
+  The author's own page: the same photograph, at the size a page can carry.
+  Rendered as a circle because that is what it is everywhere else, so the face in
+  the byline and the face here read as one person rather than two pictures.
+*/
+.author-portrait {
+  display: block;
+  width: 112px;
+  height: 112px;
+  margin-bottom: var(--space-lg);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
 .byline__monogram {
   display: grid;
   place-items: center;

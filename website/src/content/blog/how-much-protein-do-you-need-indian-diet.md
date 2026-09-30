@@ -2,6 +2,7 @@
 title: "How much protein do you actually need on an Indian diet"
 description: "A practical way to work out your own protein target — and what that looks like on a normal plate of dal, curd, roti and rice, with the honest ranges rather than a single number."
 publishedAt: 2026-09-09
+author: nehal-masood
 tags: ["High protein", "Indian food", "Weight loss"]
 ---
 

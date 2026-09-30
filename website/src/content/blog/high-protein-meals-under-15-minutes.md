@@ -2,6 +2,7 @@
 title: "High-protein meals you can actually cook in fifteen minutes"
 description: "The five things worth keeping in the kitchen, three shapes that cover most weeknights, and two filmed meals that go from fridge to plate in under fifteen minutes."
 publishedAt: 2026-09-30
+author: nehal-masood
 tags: ["High protein", "Meal planning", "Habits"]
 ---
 

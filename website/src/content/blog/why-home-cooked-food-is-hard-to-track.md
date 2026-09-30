@@ -2,6 +2,7 @@
 title: "Why home-cooked food is the hardest thing to track — and how to estimate it anyway"
 description: "A packet of biscuits comes with a label. A katori of your mother's dal does not. How to get close enough on real Indian home cooking, without weighing anything."
 publishedAt: 2026-09-22
+author: nehal-masood
 tags: ["Habits", "Meal planning", "Weight loss"]
 ---
 

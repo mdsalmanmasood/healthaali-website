@@ -12,6 +12,11 @@
  *   - Values are escaped by hand, including stripping the C0 control characters
  *     XML 1.0 forbids outright. A stray one in a title would make the whole
  *     document unparseable rather than merely ugly.
+ *
+ * The byline goes in as `dc:creator` rather than RSS's own `<author>`, because
+ * that element is specified to hold an *email address* — and a feed is not a
+ * reason to publish the author's inbox. Dublin Core is the namespace every
+ * reader already understands as "who wrote this".
  */
 import type { APIRoute } from "astro";
 
@@ -48,6 +53,7 @@ export const GET: APIRoute = async () => {
       `      <guid isPermaLink="true">${escapeXml(url)}</guid>`,
       `      <pubDate>${post.publishedAt.toUTCString()}</pubDate>`,
       `      <description>${escapeXml(post.description)}</description>`,
+      `      <dc:creator>${escapeXml(post.author.name)}</dc:creator>`,
       ...(categories ? [categories] : []),
       "    </item>",
     ].join("\n");
@@ -58,7 +64,7 @@ export const GET: APIRoute = async () => {
     : "";
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>${escapeXml(blogFeedTitle)}</title>
     <link>${escapeXml(channelUrl)}</link>

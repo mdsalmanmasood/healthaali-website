@@ -1,14 +1,22 @@
 /**
  * Who writes the blog.
  *
- * A byline is a claim about authorship, so nothing here is guessed. Today the
- * only author is the team itself, described as an `Organization` — because that
- * is what the site can actually verify: the recipes are filmed by the same
- * people who write these posts. There is deliberately no invented person,
- * portrait, job title or credential. When a real individual is ready to be
- * named, add one entry below with `type: "Person"`; every byline, author page
- * and `BlogPosting.author` node follows from this array without any other
- * change.
+ * A byline is a claim about authorship, so nothing here is guessed. There are
+ * two entries and both are supplied by the people they describe: the person who
+ * founds and writes the blog, and the team byline that stands in when a post
+ * names nobody.
+ *
+ * **A post states its own author.** `author:` in the frontmatter is what a post
+ * means, and all of them name the person today; `defaultAuthorId` below is only
+ * the fallback for a post that names nobody. That direction is deliberate: a
+ * default of "the person" would attribute a future post to her without anyone
+ * having written the claim, and an authorship claim nobody made is exactly the
+ * kind this site avoids.
+ *
+ * Nothing here is invented — no portrait that does not exist, no job title that
+ * was not supplied, no credential, no `sameAs` profile that is not the author's
+ * own. `role` and `bio` are published on every byline and on the author page, so
+ * they are written to be sentences the named person would sign.
  *
  * The team author is its own node — the kitchen that writes under the brand —
  * and says so with `parentOrganization`. It deliberately does not reuse the
@@ -64,6 +72,33 @@ export const authorPath = (id: string): string => `/blog/${authorSegment}/${id}`
 
 export const authors: Author[] = [
   {
+    id: "nehal-masood",
+    name: "Nehal Masood",
+    type: "Person",
+    role: "Founder, HealThaali",
+    bio: [
+      "Nehal Masood started HealThaali and writes everything on this blog. She",
+      "cooks the food that gets filmed, works out the portions behind each plate,",
+      "and writes down what was measured and what is still uncertain — which is",
+      "why the numbers in these posts arrive with their working.",
+    ].join(" "),
+    team: false,
+    /*
+      Empty on purpose, and not a placeholder for the brand's accounts. `sameAs`
+      says "this profile is this person", and the YouTube and Instagram accounts
+      below are the brand's, published as the brand everywhere else on the site.
+      Add a URL here only when it is a profile that belongs to her.
+    */
+    profiles: [],
+    /*
+      Supplied by the author, cropped square and encoded to WebP at quality 75 —
+      see src/assets/authors/README.md for what the file is and how it was made.
+      Naming one that is not on disk fails the build rather than shipping a
+      byline with a broken picture.
+    */
+    portrait: "nehal-masood.webp",
+  },
+  {
     id: "healthaali-kitchen",
     name: "HealThaali Kitchen",
     type: "Organization",
@@ -88,7 +123,14 @@ export const authors: Author[] = [
   },
 ];
 
-/** Used when a post does not name an author. */
+/**
+ * Used when a post does not name an author: the team, not the person.
+ *
+ * See the note at the top of this file. Every post today names `nehal-masood`
+ * explicitly, so this is reached only by a new post that says nothing about who
+ * wrote it — and a team byline is the honest answer to "who wrote this?" when
+ * nobody said.
+ */
 export const defaultAuthorId = "healthaali-kitchen";
 
 export const authorById = (id: string): Author | undefined =>
@@ -155,11 +197,40 @@ export const authorEntityId = (author: Author): string =>
  * the organisation the rest of the site already declares, which is how a
  * crawler gets from "HealThaali Kitchen wrote this" to the brand behind it.
  */
-export const authorSchemaNode = (author: Author): Record<string, unknown> => ({
-  "@type": author.type,
-  "@id": authorEntityId(author),
-  name: author.name,
-  url: absoluteUrl(authorPath(author.id)),
-  ...(author.team ? { parentOrganization: { "@id": organizationId } } : {}),
-  ...(author.profiles.length > 0 ? { sameAs: author.profiles.map((p) => p.href) } : {}),
-});
+export const authorSchemaNode = (author: Author): Record<string, unknown> => {
+  // Throws when a portrait is named but absent, which is the point: see
+  // src/assets/authors/README.md.
+  const portrait = authorPortrait(author);
+
+  return {
+    "@type": author.type,
+    "@id": authorEntityId(author),
+    name: author.name,
+    url: absoluteUrl(authorPath(author.id)),
+    /*
+      A named person is described as a person: the role they are published under,
+      and the organisation they work for. The team node instead points at the
+      organisation it is part of, because "HealThaali Kitchen" is the brand
+      rather than somebody the brand employs.
+    */
+    ...(author.team
+      ? { parentOrganization: { "@id": organizationId } }
+      : { jobTitle: author.role, worksFor: { "@id": organizationId } }),
+    /*
+      The photograph, when there is one. Until then the node carries no `image`
+      at all — a monogram is drawn in CSS and is not an image of anybody, so
+      pointing `image` at it would describe a picture that does not exist.
+    */
+    ...(portrait
+      ? {
+          image: {
+            "@type": "ImageObject",
+            url: absoluteUrl(portrait.src),
+            width: portrait.width,
+            height: portrait.height,
+          },
+        }
+      : {}),
+    ...(author.profiles.length > 0 ? { sameAs: author.profiles.map((p) => p.href) } : {}),
+  };
+};
