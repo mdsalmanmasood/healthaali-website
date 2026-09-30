@@ -610,6 +610,15 @@ Static output, so any host works. Config for all three is already in the repo.
 4. Pushes to `main` deploy to production; every pull request gets a preview URL.
    The first build prints a `*.pages.dev` address that already serves the site,
    before any DNS change.
+5. **Build watch paths** (*Settings* → *Build* → *Build watch paths*): set the
+   include paths to `website/*` and leave the excludes empty. The dashboard
+   defaults to `*`, which means every push rebuilds the site — including commits
+   that only touch this repository's `.github/` directory or its launch notes at
+   the root. Wildcards match across `/`, so `website/*` also covers nested files
+   like `website/src/pages/index.astro`. Pages skips path matching and always
+   builds when a push has no file changes or spans 3000+ files / 20+ commits.
+   This setting exists only in the dashboard; nothing in the repository
+   expresses it.
 
 ### Custom domain and DNS (the domain is registered at GoDaddy)
 
