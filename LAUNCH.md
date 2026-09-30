@@ -223,3 +223,31 @@ outcomes are deliberately different:
 | equal | ✓ | the deployment is this commit |
 | an ancestor | ○ outstanding | that is what a build in flight looks like |
 | not in this history, or missing/`unknown` | ✗ | the host is serving code this repository does not contain |
+
+## 6. Measuring the deployed site
+
+The Lighthouse numbers in the website README were taken against a **local**
+server: HTTP/1.1, no compression, no CDN. They are a floor, not the production
+figure — the deployed site is served over HTTP/2 with compression and the headers
+from `_headers` applied at the edge, which is a different measurement. Run this
+only once `check:launch` shows the site answering.
+
+```bash
+# From the repository root. Needs a Chrome binary — the same one the
+# accessibility gate uses, so if `npm run check:a11y` passes here, this runs.
+npx --yes lighthouse@12 https://healthaali.in/ \
+  --output=json --output-path=./lighthouse-mobile.json --quiet
+
+npx --yes lighthouse@12 https://healthaali.in/ \
+  --preset=desktop --output=json --output-path=./lighthouse-desktop.json --quiet
+```
+
+`lighthouse` is deliberately **not** a devDependency. It is a periodic manual
+measurement, and a dependency would grow the tree that `npm ci` installs on every
+push — for a number that only changes when the deployment does. `npx` puts it in
+the npm cache instead, and the two report files are gitignored.
+
+Read the four scores and the three timings (LCP, TBT, CLS) out of each report and
+replace the table in `website/README.md`, including its caveat sentence, which
+should then describe the real edge rather than a local server. Record the date the
+measurement was taken: a performance number without one is a rumour.

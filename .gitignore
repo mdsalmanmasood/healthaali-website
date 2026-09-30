@@ -12,6 +12,10 @@
 /.freebuff/
 /HealthAali_Astro_Website_Build_Guide.md
 
+# Lighthouse reports from a manual measurement of the deployed site
+# (see LAUNCH.md §6). Regenerated on demand, never worth committing.
+lighthouse-*.json
+
 # Operating system cruft
 .DS_Store
 Thumbs.db

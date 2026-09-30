@@ -697,9 +697,12 @@ Two things in that CSP are deliberate and load-bearing:
 ### Verified Lighthouse results
 
 A periodic manual measurement, not part of CI — see **Quality gates** above for
-what is actually enforced. Run against the built `dist/` **with the real headers
-applied**, so these are the numbers the deployed CSP produces, not a relaxed
-local server:
+what is actually enforced. These figures come from the built `dist/` served
+**locally**, with the real headers applied so the deployed CSP is in force, which
+makes them a floor rather than the production number: the live site is served
+over HTTP/2 with compression at the edge. To replace this table with deployed
+figures, run the recipe in
+[`LAUNCH.md`](../LAUNCH.md#6-measuring-the-deployed-site) §6 and record the date.
 
 | Page | Mode | Perf | A11y | Best practices | SEO |
 | --- | --- | --- | --- | --- | --- |
