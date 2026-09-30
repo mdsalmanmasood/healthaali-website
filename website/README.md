@@ -592,7 +592,10 @@ Static output, so any host works. Config for all three is already in the repo.
 Everything in this section that lives in a dashboard rather than in the repository
 — the Pages build settings, its watch paths, the custom domains, and the zone's
 records — is written down with the values actually in use in
-[`LAUNCH.md`](../LAUNCH.md).
+[`LAUNCH.md`](../LAUNCH.md). `npm run check:launch` re-derives that list from
+public DNS, RDAP and HTTPS, and exits non-zero only on a real problem rather than
+on items that are simply not done yet. It is not part of `npm run verify`, which
+stays offline and hermetic on purpose.
 
 ### Cloudflare Pages (recommended — free, no Node server needed)
 

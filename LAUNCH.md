@@ -20,6 +20,10 @@ actively break the site.
 - [ ] Uptime workflow green — it is red until the domain serves the site
 - [ ] `info@healthaali.in` can receive mail — no MX records exist yet
 
+`npm run check:launch` re-derives every line above from public DNS, RDAP and
+HTTPS. It marks items that are merely not done yet with `○` and exits non-zero
+only for real problems, so it is safe to run on any morning.
+
 ## 1. Registrar — GoDaddy (registration only, no DNS)
 
 | Setting | Value |
@@ -131,6 +135,13 @@ after 60 days without repository activity; any commit resets that clock.
 ## 5. Checking any of this without dashboard access
 
 ```bash
+# Everything on this page, re-derived from the outside in one command. Run it
+# inside website/. Exit code 1 means a real problem — a suspended domain, the
+# parking records back, a host serving someone else's page — never an item that
+# simply has not been done yet.
+npm run check:launch
+npm run check:launch -- --site https://healthaali.pages.dev
+
 # Registrar side: who the domain is delegated to, and whether it is suspended.
 # A "client hold" status here means nothing will resolve, whatever DNS says.
 curl -sL https://rdap.org/domain/healthaali.in | tr ',' '\n' | grep '"ldhName"'
