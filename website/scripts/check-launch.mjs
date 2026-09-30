@@ -39,6 +39,12 @@
  *                      not a black hole
  *   8. Pages project   the `*.pages.dev` project exists and serves something,
  *                      which is true independently of the custom domain
+ *   9. Cloudflare      *only when a read-only token is in the environment*:
+ *                      the dashboard state itself, which has no public
+ *                      footprint at all — the zone's status and nameservers
+ *                      against what DNS publishes, every record in the zone,
+ *                      the Pages build settings, its custom domains, and which
+ *                      environment variables exist (names only, never values)
  *
  * Exit code 0 = no problems (outstanding items are reported, not fatal),
  *             1 = at least one ✗.
@@ -425,6 +431,255 @@ async function checkPagesProject() {
   }
 }
 
+/* ── 9. the dashboard state itself, via the Cloudflare API ─────────────────── */
+
+/**
+ * Everything above infers the deployment from what the internet can see.
+ * Everything below asks Cloudflare directly, which is the only way to check the
+ * settings that have no public footprint: the Pages build command, the root
+ * directory, whether a custom domain finished validating, which environment
+ * variables exist.
+ *
+ * A token scoped to exactly three read permissions turns this on. Nothing else
+ * is needed, and the script never writes anything:
+ *
+ *   Zone    → Zone            → Read
+ *   Zone    → DNS             → Read
+ *   Account → Cloudflare Pages → Read
+ *
+ * Environment variable *names* are listed; their values are never printed, and
+ * secret values cannot be read back from the API at all.
+ */
+const CLOUDFLARE_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || "").trim();
+const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
+
+/**
+ * The API's `pages_domain.status` values that mean the hostname is not serving.
+ * The others (`initializing`, `pending`) are just early, so they read as
+ * outstanding rather than broken.
+ */
+const FAILED_DOMAIN_STATUSES = ["error", "blocked", "deactivated"];
+
+/** The build settings the project must have, from LAUNCH.md. */
+const EXPECTED_BUILD_CONFIG = {
+  root_dir: "website",
+  build_command: "npm run build",
+  destination_dir: "dist",
+};
+
+async function cloudflare(path) {
+  const response = await fetchWithTimeout(`${CLOUDFLARE_API}${path}`, {
+    headers: { Authorization: `Bearer ${CLOUDFLARE_TOKEN}`, Accept: "application/json" },
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok || !payload?.success) {
+    const detail =
+      (payload?.errors || []).map((error) => `${error.code} ${error.message}`).join("; ") ||
+      `HTTP ${response.status}`;
+    throw new Error(detail);
+  }
+
+  return payload.result;
+}
+
+/** How a record reads in a message: `CNAME healthaali.pages.dev`. */
+const describeRecord = (record) => `${record.type} ${record.content}`;
+
+async function checkCloudflare() {
+  if (!CLOUDFLARE_TOKEN) {
+    pending(
+      "Cloudflare API",
+      "skipped — set CLOUDFLARE_API_TOKEN (Zone:Read, DNS:Read, Pages:Read) to " +
+        "check the dashboard settings themselves, not only their effects"
+    );
+    return;
+  }
+
+  let zone;
+  try {
+    const zones = await cloudflare(`/zones?name=${HOST}`);
+    zone = Array.isArray(zones) ? zones[0] : undefined;
+    if (!zone) throw new Error(`no zone named ${HOST} is visible to this token`);
+  } catch (error) {
+    problem(
+      "Cloudflare API",
+      `the zone could not be read (${error.message}) — a token with Zone:Read, ` +
+        `DNS:Read and Pages:Read is required`
+    );
+    return;
+  }
+
+  /* the zone */
+  const plan = zone.plan?.name || "unknown plan";
+  if (zone.paused || zone.status === "paused") {
+    problem("Cloudflare zone", `paused (${plan}) — Cloudflare is serving nothing`);
+  } else if (zone.status !== "active") {
+    pending("Cloudflare zone", `status "${zone.status}" (${plan}) — must be Active to serve`);
+  } else {
+    ok("Cloudflare zone", `active, ${plan}`);
+  }
+
+  /* the zone's own idea of its nameservers, against what the domain publishes */
+  const expectedNameservers = zone.name_servers || [];
+  const publishedNameservers = (await resolve(dns.resolveNs, HOST)).values || [];
+  const unpublished = expectedNameservers.filter((name) => !publishedNameservers.includes(name));
+
+  if (expectedNameservers.length === 0) {
+    pending("Zone nameservers", "the API returned none — unexpected for a full zone");
+  } else if (unpublished.length > 0) {
+    problem(
+      "Zone nameservers",
+      `the zone expects ${expectedNameservers.join(", ")} but the domain publishes ` +
+        `${publishedNameservers.join(", ") || "nothing"}`
+    );
+  } else {
+    ok("Zone nameservers", `${expectedNameservers.join(", ")} — matches what DNS publishes`);
+  }
+
+  /* every record in the zone */
+  let records;
+  try {
+    records = await cloudflare(`/zones/${zone.id}/dns_records?per_page=100`);
+  } catch (error) {
+    problem("Zone records", `could not be listed (${error.message})`);
+  }
+
+  if (Array.isArray(records)) {
+    const parked = records.filter((record) => PARKED_ADDRESSES.includes(record.content));
+    if (parked.length > 0) {
+      problem(
+        "Zone records",
+        `the registrar's parking entries are present (${parked.map(describeRecord).join(", ")}) — ` +
+          `they block the Pages custom domain`
+      );
+    } else {
+      ok("Zone records", `${records.length} in total, no parking entries`);
+    }
+
+    for (const [label, name] of [
+      ["apex", HOST],
+      ["www", `www.${HOST}`],
+    ]) {
+      const owned = records.filter((record) => record.name === name);
+
+      if (owned.length === 0) {
+        pending(`Zone record (${label})`, "none yet — the Pages custom domain creates it");
+      } else if (owned.some((record) => record.type === "A" || record.type === "AAAA")) {
+        problem(
+          `Zone record (${label})`,
+          `a hand-made ${owned.map(describeRecord).join(", ")} exists; Pages has to own this name`
+        );
+      } else if (!owned.some((record) => String(record.content).includes(PAGES_HOST))) {
+        problem(
+          `Zone record (${label})`,
+          `${owned.map(describeRecord).join(", ")} does not point at ${PAGES_HOST}`
+        );
+      } else if (owned.some((record) => !record.proxied)) {
+        problem(
+          `Zone record (${label})`,
+          `points at ${PAGES_HOST} but proxying is off — Pages is only served through Cloudflare's edge`
+        );
+      } else {
+        ok(`Zone record (${label})`, `${owned.map(describeRecord).join(", ")}, proxied`);
+      }
+    }
+  }
+
+  /* the Pages project, its build settings, domains and variables */
+  const accountId = zone.account?.id;
+  if (!accountId) {
+    problem("Pages project (API)", "the zone response carried no account id");
+    return;
+  }
+
+  let project;
+  try {
+    project = await cloudflare(`/accounts/${accountId}/pages/projects/${PAGES_PROJECT}`);
+  } catch (error) {
+    pending(
+      "Pages project (API)",
+      `not readable (${error.message}) — the project most likely does not exist yet`
+    );
+  }
+
+  if (project) {
+    const config = project.build_config || {};
+    const mismatched = Object.entries(EXPECTED_BUILD_CONFIG).filter(
+      ([key, expected]) => (config[key] || "") !== expected
+    );
+
+    if (mismatched.length > 0) {
+      problem(
+        "Pages build settings",
+        mismatched
+          .map(([key, expected]) => `${key} is "${config[key] || "(empty)"}", should be "${expected}"`)
+          .join("; ")
+      );
+    } else {
+      ok(
+        "Pages build settings",
+        `root_dir website, npm run build → dist (subdomain ${project.subdomain || PAGES_HOST})`
+      );
+    }
+
+    const source = project.source?.config;
+    ok(
+      "Pages source",
+      source
+        ? `${source.owner}/${source.repo_name} on branch ${source.production_branch}`
+        : "no git source attached"
+    );
+
+    const envVars = project.deployment_configs?.production?.env_vars || {};
+    const names = Object.keys(envVars).sort();
+    ok(
+      "Pages environment variables",
+      names.length > 0
+        ? `${names.join(", ")} (names only, never values)`
+        : 'none set — the honest "coming soon" build'
+    );
+
+    let domains;
+    try {
+      domains = await cloudflare(`/accounts/${accountId}/pages/projects/${PAGES_PROJECT}/domains`);
+    } catch (error) {
+      problem("Pages custom domains", `could not be listed (${error.message})`);
+    }
+
+    if (Array.isArray(domains)) {
+      const attached = domains.map((domain) => domain.name);
+      const failed = domains.filter((domain) => FAILED_DOMAIN_STATUSES.includes(domain.status));
+      const waiting = domains.filter(
+        (domain) => domain.status !== "active" && !FAILED_DOMAIN_STATUSES.includes(domain.status)
+      );
+      const notAttached = [HOST, `www.${HOST}`].filter((name) => !attached.includes(name));
+
+      if (failed.length > 0) {
+        problem(
+          "Pages custom domains",
+          failed
+            .map((domain) => {
+              const reason = domain.validation_data?.error_message;
+              return `${domain.name} is ${domain.status}${reason ? ` — ${reason}` : ""}`;
+            })
+            .join("; ")
+        );
+      } else if (domains.length === 0) {
+        pending("Pages custom domains", "none attached — the site only answers on its *.pages.dev address");
+      } else {
+        const note = waiting.length > 0 ? ` (still validating: ${waiting.map((d) => d.name).join(", ")})` : "";
+        const missing = notAttached.length > 0 ? `; not attached: ${notAttached.join(", ")}` : "";
+        (waiting.length > 0 || notAttached.length > 0 ? pending : ok)(
+          "Pages custom domains",
+          `${attached.join(", ")}${note}${missing}`
+        );
+      }
+    }
+  }
+}
+
 /* ── main ─────────────────────────────────────────────────────────────────── */
 
 async function main() {
@@ -438,6 +693,7 @@ async function main() {
   await checkCertificate(homepage);
   await checkMail();
   await checkPagesProject();
+  await checkCloudflare();
 
   const ok_ = results.filter((r) => r.state === "ok");
   const outstanding = results.filter((r) => r.state === "pending");

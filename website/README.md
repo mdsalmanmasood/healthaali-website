@@ -594,7 +594,10 @@ Everything in this section that lives in a dashboard rather than in the reposito
 records — is written down with the values actually in use in
 [`LAUNCH.md`](../LAUNCH.md). `npm run check:launch` re-derives that list from
 public DNS, RDAP and HTTPS, and exits non-zero only on a real problem rather than
-on items that are simply not done yet. It is not part of `npm run verify`, which
+on items that are simply not done yet. Give it a read-only `CLOUDFLARE_API_TOKEN`
+and it reads the dashboard settings themselves as well — the Pages build
+configuration, the custom domains and the zone's records — since none of those
+leave a public trace to infer from. It is not part of `npm run verify`, which
 stays offline and hermetic on purpose.
 
 ### Cloudflare Pages (recommended — free, no Node server needed)

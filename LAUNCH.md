@@ -22,7 +22,9 @@ actively break the site.
 
 `npm run check:launch` re-derives every line above from public DNS, RDAP and
 HTTPS. It marks items that are merely not done yet with `○` and exits non-zero
-only for real problems, so it is safe to run on any morning.
+only for real problems, so it is safe to run on any morning. With a read-only
+`CLOUDFLARE_API_TOKEN` in the environment it checks the dashboard settings
+themselves too — see §5.
 
 ## 1. Registrar — GoDaddy (registration only, no DNS)
 
@@ -162,3 +164,33 @@ A resolver can keep serving the previous delegation until its TTL expires, so
 immediately after a nameserver change two resolvers disagreeing is normal rather
 than broken. Querying the zone's own nameservers shows the authoritative answer
 the moment the change lands.
+
+### Deep mode: reading the dashboards themselves
+
+Everything above is inferred from the outside, which is exactly why it cannot
+see the settings on this page: a build command, a root directory or an unvalidated
+custom domain leaves no public trace. Put a **read-only** token in the
+environment and `check:launch` also reads the Cloudflare API directly:
+
+```bash
+# Create at: My Profile → API Tokens → Create Custom Token, with these three
+# permissions and nothing else. Scope it to this account (or this zone).
+#   Zone    → Zone             → Read
+#   Zone    → DNS              → Read
+#   Account → Cloudflare Pages → Read
+export CLOUDFLARE_API_TOKEN=…
+npm run check:launch
+```
+
+It then also verifies: the zone's status and whether it is paused; the zone's own
+nameservers against what the domain publishes; every record in the zone, with the
+apex and `www` checked for ownership and proxying rather than for presence; the
+Pages `root_dir`, build command and output directory against the values above;
+the git source and production branch; which environment variables exist (**names
+only** — values are never read or printed); and each custom domain's status,
+including its validation error message when one fails.
+
+Without the variable the deep checks report themselves as outstanding and change
+nothing else. With a token that is expired or under-scoped, they fail loudly with
+the API's own error rather than passing quietly — a dead token must not look like
+a healthy deployment.
