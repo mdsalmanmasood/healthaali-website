@@ -1,7 +1,7 @@
 ---
 title: "How to build a balanced thaali you will actually eat again tomorrow"
 description: "Four jobs a plate has to do, how to judge the portions with your hands instead of a scale, and a worked 490-calorie lunch that carries about 40 grams of protein."
-publishedAt: 2026-09-18
+publishedAt: 2026-08-13
 author: nehal-masood
 tags: ["Indian food", "Meal planning", "High protein"]
 ---
@@ -79,4 +79,4 @@ A balanced plate is not a fix for everything. If you are training hard, pregnant
 
 What a balanced plate does do, reliably, is make the estimate easy. When protein, vegetables, grain and a side are all present and all judged in portions you can see, there is not much left to track, because there is not much left to guess. That is the entire design goal of HealThaali's meal screen: the day's numbers against your own targets — described on [the features page](/features) — built on plates that look like plates, not like a diet.
 
-If you are starting from the protein question, [how much protein you actually need](/blog/how-much-protein-do-you-need-indian-diet) is the post before this one.
+If you are starting from the protein question, [how much protein you actually need](/blog/how-much-protein-do-you-need-indian-diet) is the post before this one, and [how much protein is really in dal](/blog/how-much-protein-in-dal) is the portion arithmetic behind the most common thing people put on the plate to answer it. The fourth job — the vegetables — is also carrying the nutrient nobody counts, which [has its own post](/blog/fibre-in-an-indian-diet).

@@ -1,7 +1,7 @@
 ---
 title: "Weight loss with Indian food: what to change before you cut rice"
 description: "Two ways this usually fails, the change that does most of the work, why rice is not the villain, and what a week of steady progress actually looks like."
-publishedAt: 2026-09-26
+publishedAt: 2026-07-13
 author: nehal-masood
 tags: ["Weight loss", "Indian food", "Meal planning"]
 ---
@@ -68,4 +68,4 @@ Weigh yourself in the same conditions once or twice a week and look at the **mon
 
 Everything above is unglamorous, and that is deliberate. The version of this that works is not the one that is best on paper — it is the one still running in week nine, on a day you are tired and someone else is cooking. Small changes to oil, protein, snacks and the rice portion are achievable in a real kitchen. A diet that requires a separate meal every night for the household is not.
 
-If you have not read the protein post yet, that one is the foundation: [how much protein you actually need](/blog/how-much-protein-do-you-need-indian-diet). And if the logging side is what stops you, [this one on estimating home cooking](/blog/why-home-cooked-food-is-hard-to-track) is written for exactly that. HealThaali is being built to hold the numbers — goals, plate composition and progress on [the features page](/features) — while the cooking stays in your kitchen.
+If you have not read the protein post yet, that one is the foundation: [how much protein you actually need](/blog/how-much-protein-do-you-need-indian-diet). And if the logging side is what stops you, [this one on estimating home cooking](/blog/why-home-cooked-food-is-hard-to-track) is written for exactly that. The other half of "someone else is cooking" is the restaurant and the delivery order, and [that one has its own post too](/blog/eating-out-without-losing-the-plan) — same plan, different set of decisions. HealThaali is being built to hold the numbers — goals, plate composition and progress on [the features page](/features) — while the cooking stays in your kitchen.

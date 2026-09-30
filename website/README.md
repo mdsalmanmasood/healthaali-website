@@ -249,7 +249,7 @@ src/
 │                         DownloadCTA, RecipeCard, PostCard, TopicRail, Breadcrumbs,
 │                         PostByline, TestimonialCard, Icon, JsonLd, PolicyHistory
 ├── content/
-│   └── blog/             one Markdown file per post (six at launch)
+│   └── blog/             one Markdown file per post (the file name is the URL)
 ├── data/                 site, navigation, features, faq, screenshots, testimonials,
 │                         recipes.json (generated) + recipes.ts (typed loader),
 │                         blog.ts (validated blog loader), authors.ts (who writes),
@@ -631,7 +631,7 @@ inconsistency.
 
 ### The empty state is still there
 
-There are six posts at launch, and the blog's empty state was written before them and kept.
+The blog's empty state was written before the first post and has been kept since, through every batch of posts added after it.
 It is not decoration: with no published posts, `/blog` renders "the first post is being
 written" and points at `/recipes`, no topic pages are generated, and the RSS feed omits
 `lastBuildDate` rather than stamping the build time.
@@ -644,6 +644,40 @@ Two consequences of that state are expected when it happens, and neither is a bu
   sitemap is consistent, but a single thin page that is linked from the navigation anyway
   would gain nothing from being hidden, and the empty state is real content rather than a
   stub.
+
+### What gets written next
+
+The blog is written to answer questions people actually type, in the order they
+type them — not to fill a calendar. Three rules decide what gets a post:
+
+- **It has to be a real question with a real answer.** “How much protein is in
+dal” and “is soya bad for men” are asked constantly and have honest answers. A
+topic that only exists to mention the app gets folded into a post that already
+exists.
+- **It has to be answerable without inventing anything.** See the content policy
+above: no invented features, ratings, certifications or company details. That is
+why there is no post on managing a diagnosed condition — the useful version of
+that answer is a doctor's, and a blog that says so is more trustworthy than one
+that guesses.
+- **It has to belong to the cluster.** Every post links to at least two others
+(enforced), so a topic that does not connect to anything already published is a
+sign it is the wrong topic, or that something else should have been written
+first.
+
+The queue, roughly in the order these earn their place:
+
+| Topic | The question it answers |
+| --- | --- |
+| Millets, brown rice and multigrain atta | “Are the premium swaps worth it?” — mostly a fibre and price story, not a calorie one |
+| Roti or rice | Already answered inside the weight-loss post; only worth its own page if the search data says so |
+| Ghee, coconut oil, mustard oil | Which fat, and whether any of them is special — sizing up the oil post |
+| Fasting and festival weeks | Navratri, Ekadashi, Ramadan: what changes and what does not |
+| A week of dinners | The balanced plate applied to seven real evenings, one of them a failure |
+
+Anything medical-adjacent — PCOS, thyroid, diabetes management — is deliberately
+absent rather than pending. The honest version of those posts is “ask your
+doctor for the version that applies to you”, which this blog already says in the
+disclaimer on every page; a longer post would add words, not information.
 
 ### Writing a post, end to end
 

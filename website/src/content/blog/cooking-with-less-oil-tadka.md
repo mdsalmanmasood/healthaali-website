@@ -1,7 +1,7 @@
 ---
 title: "Cooking with less oil: where the oil actually hides in an Indian kitchen"
 description: "A teaspoon of oil is about 40 calories, and most kitchens spend ten of them without noticing. Here is where the oil goes, what to change first, and how to keep the flavour while you do it."
-publishedAt: 2026-09-14
+publishedAt: 2026-08-23
 author: nehal-masood
 tags: ["Zero oil", "Indian food", "Habits"]
 ---
@@ -66,4 +66,4 @@ The honest version of this advice is: **decide where your oil goes rather than r
 
 Changing the whole kitchen at once is how diets fail. Pick one dish you cook often — the daily sabzi, or the tadka you make every morning — and cut the oil by half using the pan and water techniques above. If it tastes worse, use three-quarters of the original next time and keep the change. If it tastes the same, you have just moved 100 to 150 calories a day without giving anything up, which is a bigger change than most people manage by willpower.
 
-If you want the numbers side of this, [the protein post](/blog/how-much-protein-do-you-need-indian-diet) explains how to estimate a plate at a glance, and [the balanced thaali post](/blog/how-to-build-a-balanced-thaali) is about what else belongs on it. Every dish we have filmed with the technique on camera is on [the recipes page](/recipes).
+If you want the numbers side of this, [the protein post](/blog/how-much-protein-do-you-need-indian-diet) explains how to estimate a plate at a glance, and [the balanced thaali post](/blog/how-to-build-a-balanced-thaali) is about what else belongs on it. If you want the one ingredient where this matters most, it is soya: it goes dry and floury, which is exactly what tempts people into frying it, and [the soya post](/blog/soya-chunks-cheapest-protein) is about cooking it without that. Every dish we have filmed with the technique on camera is on [the recipes page](/recipes).

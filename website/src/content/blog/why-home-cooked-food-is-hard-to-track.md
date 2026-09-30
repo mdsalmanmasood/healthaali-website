@@ -1,7 +1,7 @@
 ---
 title: "Why home-cooked food is the hardest thing to track — and how to estimate it anyway"
 description: "A packet of biscuits comes with a label. A katori of your mother's dal does not. How to get close enough on real Indian home cooking, without weighing anything."
-publishedAt: 2026-09-22
+publishedAt: 2026-07-02
 author: nehal-masood
 tags: ["Habits", "Meal planning", "Weight loss"]
 ---
@@ -65,4 +65,4 @@ Worth saying plainly: if logging makes you skip meals, feel guilty about food, o
 
 The reason HealThaali records components rather than dishes is this post. Food memory, quick logging and the plate camera on [the features page](/features) exist so the estimate takes a few seconds instead of an evening, and so the answer to "was today roughly right?" is on one screen. The app is still in development; what is ready today is the cooking, on [the recipes page](/recipes).
 
-Next in this series: [what to change before you cut rice](/blog/weight-loss-with-indian-food-without-banning-rice).
+Next in this series: [what to change before you cut rice](/blog/weight-loss-with-indian-food-without-banning-rice). The other side of the same problem is the meal somebody else cooked to a recipe you cannot see, which is [what eating out and ordering in does to a week](/blog/eating-out-without-losing-the-plan) — and the packaged half of it, including the label on those four biscuits, is in [the post on sugar in an ordinary day](/blog/sugar-in-an-ordinary-indian-day).

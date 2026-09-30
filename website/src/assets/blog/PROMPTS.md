@@ -1,7 +1,8 @@
 # Blog cover images — generation prompts
 
-Six covers for the six launch posts. Nothing here is published yet: the posts
-ship without images, and each one gets a cover the moment its file appears.
+12 covers, one for every post on this blog. Nothing here is
+published yet: the posts ship without images, and each one gets a cover the
+moment its file appears.
 
 ## How to use this
 
@@ -153,4 +154,130 @@ Angled photograph of a dark flat tawa on a gas stove with two golden stuffed pan
 
 ```text
 Two golden stuffed paneer pockets crisping on a dark flat tawa, with chopped coriander and a lemon wedge behind it.
+```
+
+---
+
+## 7. how-much-protein-in-dal
+
+**Subject:** the same dal, thick and thin, side by side
+
+**Prompt**
+
+```text
+Overhead photograph on cream linen of two identical steel katoris of toor dal: the left one thick enough to hold the shape of the spoon, the right one thin and watery, with a small steel bowl of dry yellow toor dal and a folded stack of two rotis beside them. Soft natural window light from the upper left, warm neutral tones, visible texture in the dal, a few cumin seeds on the cloth. Photographic, 50mm lens. No text, no logos, no packaging, no people, no hands.
+```
+
+**Save the result as** `asset/blog/how-much-protein-in-dal.png` (any of .png, .jpg, .jpeg,
+.webp or .avif — the name is what matters).
+
+**Alt text** (already written for this image; adjust it if the picture differs)
+
+```text
+Two steel katoris of the same dal, one thick and one thin, beside a bowl of dry toor dal and a stack of two rotis.
+```
+
+---
+
+## 8. fibre-in-an-indian-diet
+
+**Subject:** the parts of a plate that carry the fibre
+
+**Prompt**
+
+```text
+Top-down photograph on cream linen cloth of a katori of green sabzi, a katori of cooked rajma, a small bowl of raw cucumber, onion and tomato salad with a lemon wedge, one apple cut in half showing the skin, and a small steel bowl of peanuts. Bright diffused daylight, fresh vegetables, no oil sheen, muted cream and terracotta background, everything in focus. Photographic, 35mm lens. No text, no logos, no packaging, no people.
+```
+
+**Save the result as** `asset/blog/fibre-in-an-indian-diet.png` (any of .png, .jpg, .jpeg,
+.webp or .avif — the name is what matters).
+
+**Alt text** (already written for this image; adjust it if the picture differs)
+
+```text
+A katori of sabzi, a katori of rajma, a bowl of raw salad, a halved apple and a bowl of peanuts arranged on cream cloth.
+```
+
+---
+
+## 9. sugar-in-an-ordinary-indian-day
+
+**Subject:** one day's sugar, laid out on a tray
+
+**Prompt**
+
+```text
+Overhead photograph of a plain steel tray on a cream cloth holding an ordinary day's sugar: three small glasses of chai, a saucer with four plain biscuits, a small bowl of tomato ketchup with a spoon, a tall glass of orange juice, one piece of light-coloured mithai, and a small steel bowl of loose white sugar with a teaspoon in it. Soft even daylight, unstyled and lived-in, warm neutral palette. Photographic, 35mm lens. No text, no logos, no packaging, no brand marks, no people, no hands.
+```
+
+**Save the result as** `asset/blog/sugar-in-an-ordinary-indian-day.png` (any of .png, .jpg, .jpeg,
+.webp or .avif — the name is what matters).
+
+**Alt text** (already written for this image; adjust it if the picture differs)
+
+```text
+A steel tray holding three glasses of chai, four biscuits on a saucer, a bowl of ketchup, a glass of juice, a piece of mithai and a bowl of sugar.
+```
+
+---
+
+## 10. soya-chunks-cheapest-protein
+
+**Subject:** soya chunks before and after the soak
+
+**Prompt**
+
+```text
+Photograph on a cream cloth of two steel bowls side by side: the left holding dry, pale soya chunks, the right holding the same chunks after soaking, plump and drained, with a folded cotton kitchen towel and a small bowl of crushed black pepper beside them, and a dark kadai just behind. Cool diffused daylight from a window at the right, clean and calm composition, shallow depth of field, visible texture on the chunks. Photographic, 50mm lens. No text, no logos, no packaging, no people, no hands.
+```
+
+**Save the result as** `asset/blog/soya-chunks-cheapest-protein.png` (any of .png, .jpg, .jpeg,
+.webp or .avif — the name is what matters).
+
+**Alt text** (already written for this image; adjust it if the picture differs)
+
+```text
+Two steel bowls side by side, one of dry soya chunks and one of soaked, drained chunks, with a cloth and a bowl of crushed pepper.
+```
+
+---
+
+## 11. eating-out-without-losing-the-plan
+
+**Subject:** a restaurant table ordered well
+
+**Prompt**
+
+```text
+Photograph at 45 degrees of an Indian restaurant table with a dark wooden top and white plates: a tandoori platter of chicken and paneer tikka with onion rings and lemon, a small bowl of dal, two rotis in a cloth, a bowl of raita, a glass of buttermilk, and a tall glass of water. Warm restaurant lighting from above, softly out-of-focus room behind, appetising and clean, no menu visible in frame. Photographic, 35mm lens. No text, no logos, no packaging, no people, no hands.
+```
+
+**Save the result as** `asset/blog/eating-out-without-losing-the-plan.png` (any of .png, .jpg, .jpeg,
+.webp or .avif — the name is what matters).
+
+**Alt text** (already written for this image; adjust it if the picture differs)
+
+```text
+A restaurant table set with a tandoori platter, a bowl of dal, two rotis, raita, buttermilk and a glass of water.
+```
+
+---
+
+## 12. protein-at-breakfast-indian-food
+
+**Subject:** an Indian breakfast with the protein on the plate
+
+**Prompt**
+
+```text
+Overhead photograph on cream cloth of an Indian breakfast: a plate of poha with a small bowl of plain curd beside it, two boiled eggs halved to show the yolks, a small steel bowl of roasted peanuts, a steel tumbler of chai, and a lemon wedge. Bright morning light from a window at the left, unstyled family kitchen, warm cream and green palette, faint steam from the chai. Photographic, 35mm lens. No text, no logos, no packaging, no people, no hands.
+```
+
+**Save the result as** `asset/blog/protein-at-breakfast-indian-food.png` (any of .png, .jpg, .jpeg,
+.webp or .avif — the name is what matters).
+
+**Alt text** (already written for this image; adjust it if the picture differs)
+
+```text
+A plate of poha with a bowl of curd, two halved boiled eggs, roasted peanuts and a tumbler of chai on cream cloth.
 ```

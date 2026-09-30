@@ -1,7 +1,7 @@
 ---
 title: "High-protein meals you can actually cook in fifteen minutes"
 description: "The five things worth keeping in the kitchen, three shapes that cover most weeknights, and two filmed meals that go from fridge to plate in under fifteen minutes."
-publishedAt: 2026-09-30
+publishedAt: 2026-09-15
 author: nehal-masood
 tags: ["High protein", "Meal planning", "Habits"]
 ---
@@ -21,6 +21,8 @@ Keep these in the house and a fifteen-minute meal stops being a decision:
 - **Cooked chana or rajma.** Not from a tin at 8:40 pm — from a batch you cooked on the weekend, in the fridge, ready. This is the difference between a fast meal and a takeaway.
 
 Add whatever vegetable is in season, a lemon, and your masala box, and the arithmetic works out.
+
+Soya is the one on that list people give up on after a single try, usually because it went into the pan still holding its soaking water. [The post on cooking it properly](/blog/soya-chunks-cheapest-protein) is about the two steps that decide whether you like it — and it is the cheapest protein on this shelf by a distance.
 
 ## Three shapes, not a hundred recipes
 
@@ -74,3 +76,5 @@ Boil a batch of chana or rajma, soak soya chunks in bulk, roast a tray of vegeta
 All three shapes put a deliberate protein source in the middle and build around it, which is exactly the habit in [how much protein you actually need](/blog/how-much-protein-do-you-need-indian-diet). Get to 30 to 40 g at a meal without spending 700 calories or an hour, and a good day stops being a rare event.
 
 Every meal in this post is filmed, and so is the rest of what we cook — [the recipes page](/recipes) lists them newest first. If you want a fast meal to be part of a full week rather than an emergency, [the balanced thaali post](/blog/how-to-build-a-balanced-thaali) is the structure to build it on.
+
+The same problem happens one meal earlier, and it is worse there because the morning is the meal nobody negotiates with: [breakfast is where the day's protein usually goes missing](/blog/protein-at-breakfast-indian-food).

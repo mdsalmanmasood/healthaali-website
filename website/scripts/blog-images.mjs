@@ -5,8 +5,8 @@
  *   npm run blog:images -- --prompts    (re)write src/assets/blog/PROMPTS.md
  *   npm run blog:images -- --force      re-encode even when already up to date
  *
- * The six launch posts were written before their cover images existed. Rather
- * than committing placeholder art, this script waits for the real image:
+ * Every post is written before its cover image exists. Rather than committing
+ * placeholder art, this script waits for the real image:
  *
  *   INPUT  (read-only, not committed — see the root .gitignore)
  *     ../../asset/blog/<slug>.png       or .jpg / .jpeg / .webp / .avif
@@ -109,6 +109,48 @@ const COVERS = [
       "Angled photograph of a dark flat tawa on a gas stove with two golden stuffed paneer pockets crisping on it, a small bowl of chopped coriander and a lemon wedge just behind the stove, a clean steel plate waiting beside it. Warm evening kitchen light from a window at the left, cream tiles, faint steam, oil barely visible. Photographic, 50mm lens, close and appetising. No text, no logos, no packaging, no people, no hands.",
     alt: "Two golden stuffed paneer pockets crisping on a dark flat tawa, with chopped coriander and a lemon wedge behind it.",
   },
+  {
+    slug: "how-much-protein-in-dal",
+    subject: "the same dal, thick and thin, side by side",
+    prompt:
+      "Overhead photograph on cream linen of two identical steel katoris of toor dal: the left one thick enough to hold the shape of the spoon, the right one thin and watery, with a small steel bowl of dry yellow toor dal and a folded stack of two rotis beside them. Soft natural window light from the upper left, warm neutral tones, visible texture in the dal, a few cumin seeds on the cloth. Photographic, 50mm lens. No text, no logos, no packaging, no people, no hands.",
+    alt: "Two steel katoris of the same dal, one thick and one thin, beside a bowl of dry toor dal and a stack of two rotis.",
+  },
+  {
+    slug: "fibre-in-an-indian-diet",
+    subject: "the parts of a plate that carry the fibre",
+    prompt:
+      "Top-down photograph on cream linen cloth of a katori of green sabzi, a katori of cooked rajma, a small bowl of raw cucumber, onion and tomato salad with a lemon wedge, one apple cut in half showing the skin, and a small steel bowl of peanuts. Bright diffused daylight, fresh vegetables, no oil sheen, muted cream and terracotta background, everything in focus. Photographic, 35mm lens. No text, no logos, no packaging, no people.",
+    alt: "A katori of sabzi, a katori of rajma, a bowl of raw salad, a halved apple and a bowl of peanuts arranged on cream cloth.",
+  },
+  {
+    slug: "sugar-in-an-ordinary-indian-day",
+    subject: "one day's sugar, laid out on a tray",
+    prompt:
+      "Overhead photograph of a plain steel tray on a cream cloth holding an ordinary day's sugar: three small glasses of chai, a saucer with four plain biscuits, a small bowl of tomato ketchup with a spoon, a tall glass of orange juice, one piece of light-coloured mithai, and a small steel bowl of loose white sugar with a teaspoon in it. Soft even daylight, unstyled and lived-in, warm neutral palette. Photographic, 35mm lens. No text, no logos, no packaging, no brand marks, no people, no hands.",
+    alt: "A steel tray holding three glasses of chai, four biscuits on a saucer, a bowl of ketchup, a glass of juice, a piece of mithai and a bowl of sugar.",
+  },
+  {
+    slug: "soya-chunks-cheapest-protein",
+    subject: "soya chunks before and after the soak",
+    prompt:
+      "Photograph on a cream cloth of two steel bowls side by side: the left holding dry, pale soya chunks, the right holding the same chunks after soaking, plump and drained, with a folded cotton kitchen towel and a small bowl of crushed black pepper beside them, and a dark kadai just behind. Cool diffused daylight from a window at the right, clean and calm composition, shallow depth of field, visible texture on the chunks. Photographic, 50mm lens. No text, no logos, no packaging, no people, no hands.",
+    alt: "Two steel bowls side by side, one of dry soya chunks and one of soaked, drained chunks, with a cloth and a bowl of crushed pepper.",
+  },
+  {
+    slug: "eating-out-without-losing-the-plan",
+    subject: "a restaurant table ordered well",
+    prompt:
+      "Photograph at 45 degrees of an Indian restaurant table with a dark wooden top and white plates: a tandoori platter of chicken and paneer tikka with onion rings and lemon, a small bowl of dal, two rotis in a cloth, a bowl of raita, a glass of buttermilk, and a tall glass of water. Warm restaurant lighting from above, softly out-of-focus room behind, appetising and clean, no menu visible in frame. Photographic, 35mm lens. No text, no logos, no packaging, no people, no hands.",
+    alt: "A restaurant table set with a tandoori platter, a bowl of dal, two rotis, raita, buttermilk and a glass of water.",
+  },
+  {
+    slug: "protein-at-breakfast-indian-food",
+    subject: "an Indian breakfast with the protein on the plate",
+    prompt:
+      "Overhead photograph on cream cloth of an Indian breakfast: a plate of poha with a small bowl of plain curd beside it, two boiled eggs halved to show the yolks, a small steel bowl of roasted peanuts, a steel tumbler of chai, and a lemon wedge. Bright morning light from a window at the left, unstyled family kitchen, warm cream and green palette, faint steam from the chai. Photographic, 35mm lens. No text, no logos, no packaging, no people, no hands.",
+    alt: "A plate of poha with a bowl of curd, two halved boiled eggs, roasted peanuts and a tumbler of chai on cream cloth.",
+  },
 ];
 
 /* ── helpers ──────────────────────────────────────────────────────────────── */
@@ -210,8 +252,9 @@ ${entry.alt}
 
   const document = `# Blog cover images — generation prompts
 
-Six covers for the six launch posts. Nothing here is published yet: the posts
-ship without images, and each one gets a cover the moment its file appears.
+${COVERS.length} covers, one for every post on this blog. Nothing here is
+published yet: the posts ship without images, and each one gets a cover the
+moment its file appears.
 
 ## How to use this
 

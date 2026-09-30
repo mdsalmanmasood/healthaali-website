@@ -1,7 +1,7 @@
 ---
 title: "How much protein do you actually need on an Indian diet"
 description: "A practical way to work out your own protein target — and what that looks like on a normal plate of dal, curd, roti and rice, with the honest ranges rather than a single number."
-publishedAt: 2026-09-09
+publishedAt: 2026-08-09
 author: nehal-masood
 tags: ["High protein", "Indian food", "Weight loss"]
 ---
@@ -61,7 +61,7 @@ We round deliberately. Portion sizes vary wildly between households, brands diff
 
 ## The two mistakes that keep the number low
 
-**Protein only at dinner.** Almost every low-protein day we have measured has the same shape: tea and biscuits at 8, a light lunch, then a large dinner doing all the work. The body does not store protein for later the way it stores fat, and a very large single dose is used less efficiently than the same total spread across the day. Moving one protein source to breakfast is the single highest-value change available, and it costs nothing.
+**Protein only at dinner.** Almost every low-protein day we have measured has the same shape: tea and biscuits at 8, a light lunch, then a large dinner doing all the work. The body does not store protein for later the way it stores fat, and a very large single dose is used less efficiently than the same total spread across the day. Moving one protein source to breakfast is the single highest-value change available, and it costs nothing — [what that looks like dish by dish is here](/blog/protein-at-breakfast-indian-food), including why a plate of poha is only about 4 g of protein.
 
 **Protein that arrives with oil.** Two samosas have protein in them. So does a plate of pakoras. They also arrive with a large amount of oil, which is why "I eat protein" and "I am eating better" can both be true and still not add up to progress. This is the same problem we tackle in [the post on cooking with less oil](/blog/cooking-with-less-oil-tadka).
 
@@ -71,7 +71,7 @@ Vegetarian Indian food can absolutely hit the target; it just needs the protein 
 
 - **Soya chunks.** Gram for gram the cheapest high-protein ingredient available, and it takes on whatever you cook it in.
 - **Paneer and curd.** Both are complete proteins and both appear in dishes people already like.
-- **A pulse at every meal, in a real portion.** A katori of dal at lunch and a katori at dinner is 16 to 18 g on its own.
+- **A pulse at every meal, in a real portion.** A katori of dal at lunch and a katori at dinner is 16 to 18 g on its own, and [how much one katori actually carries](/blog/how-much-protein-in-dal) depends on how much water went into the pot rather than on which dal you bought.
 - **Combining, without over-thinking it.** Dal with rice, curd with roti, chana with anything — Indian meals have been combining grains and pulses for a very long time.
 
 You do not have to combine perfectly at every meal. Over a day, a mixed vegetarian diet covers what it needs. What it will not do is cover it by chance at 20 g per plate.
@@ -99,4 +99,4 @@ This is the part of HealThaali that exists for exactly this problem — protein,
 
 We are not saying everyone needs a protein supplement, a specific gram figure, or protein at every single meal. Most Indian households get closer than they think by making two deliberate choices rather than fifteen. And we are not going to quote an exact number as though your body came with one printed on it: the ranges above are what the guidance says, and your own requirement sits inside them somewhere.
 
-If you want the cooking half of this, [the zero-oil tadka post](/blog/cooking-with-less-oil-tadka) is the one to read next. If you would rather watch someone do it, [every dish we have filmed is here](/recipes).
+If you want the cooking half of this, [the zero-oil tadka post](/blog/cooking-with-less-oil-tadka) is the one to read next. For the portion arithmetic behind the table above, [how much protein is really in dal](/blog/how-much-protein-in-dal) works through the most common answer to "where does your protein come from". And if the day is short on the nutrient that makes those pulses filling in the first place, [fibre is the other half of the same plate](/blog/fibre-in-an-indian-diet). If you would rather watch someone do it, [every dish we have filmed is here](/recipes).
