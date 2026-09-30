@@ -126,7 +126,7 @@ Every pull request also gets a preview deployment; only `main` is production.
 
 | Workflow | Trigger | What it gates |
 | --- | --- | --- |
-| `ci.yml` | push / PR to `main`, manual | install, typecheck, recipes, build, placeholders, links, a11y |
+| `ci.yml` | push / PR to `main`, manual | install, typecheck, recipes, build, placeholders, links, page weight, a11y |
 | `sync-recipes.yml` | daily 03:00 UTC, manual | proposes the YouTube snapshot as a PR only when it really changed |
 | `uptime.yml` | every six hours at :17, manual | probes the live domain and its certificate |
 | `launch-check.yml` | every six hours at :47, manual | re-runs `check:launch`, so launch regressions are caught without anyone looking; also asserts the deployed revision comes from this repository |

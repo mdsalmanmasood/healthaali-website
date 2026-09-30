@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # HealThaali — continuous integration
 #
-# Seven gates, in the order a failure is cheapest to understand:
+# Eight gates, in the order a failure is cheapest to understand:
 #
 #   1. Install       `npm ci` from the committed lockfile
 #   2. Typecheck     `astro check` — TypeScript + template diagnostics
@@ -11,7 +11,8 @@
 #   5. Check placeholders
 #                    no `[square-bracket]` scaffolding left in any built page
 #   6. Check links   internal link, anchor, sitemap and robots integrity
-#   7. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
+#   7. Check weight  no built page may exceed its gzipped HTML/CSS/JS budget
+#   8. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
 #                    in both the light and the dark colour scheme
 #
 # Every step runs the same npm script a developer runs locally, so CI cannot
@@ -98,6 +99,12 @@ jobs:
 
       - name: Check links in the built site
         run: npm run check:links
+
+      # Deterministic and instant, so it runs before the browser-based audit:
+      # performance regressions show up in bytes long before they show up in a
+      # score, and a score is too dependent on the runner's CPU to gate on.
+      - name: Check page weight
+        run: npm run check:weight
 
       # Serves dist/ itself and auto-discovers every page, so new pages are
       # covered without touching scripts/check-a11y.mjs. Chrome is the one

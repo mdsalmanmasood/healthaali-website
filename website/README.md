@@ -75,7 +75,8 @@ Windows: **`preview.bat`** builds first, then serves `dist/`.
 | `npm run check:a11y` | axe-core WCAG A/AA audit of every built page, in light *and* dark |
 | `npm run check:placeholders` | Fail on any `[bracketed]` placeholder left in a built page |
 | `npm run check:recipes` | Validate the committed recipe snapshot, offline |
-| `npm run verify` | `check:recipes` + `build` + `check:placeholders` + `check:links` + `check:a11y` — exactly what CI runs |
+| `npm run check:weight` | Fail when a built page exceeds its gzipped HTML/CSS/JS budget |
+| `npm run verify` | `check:recipes` + `build` + `check:placeholders` + `check:links` + `check:weight` + `check:a11y` — exactly what CI runs |
 | `npm run assets` | Re-derive every image from the supplied brand kit |
 | `npm run recipes` | Sync the recipe snapshot from the public YouTube feed |
 
@@ -204,10 +205,30 @@ There is no opt-out comment on purpose: at the moment no page needs a real
 square bracket, so "square brackets mean unfinished" holds site-wide. If that
 ever changes, edit the script in the same commit as the text that needs one.
 
+### Page weight — `npm run check:weight`
+
+[`scripts/check-weight.mjs`](scripts/check-weight.mjs) fails the build when a
+page's gzipped HTML, CSS or total crosses a budget. It exists because
+performance regressions are invisible to every other gate here: a page that gains
+a second stylesheet or a charting library still typechecks, still passes axe,
+still has working links, and still scores well on an idle laptop. The only place
+it shows up is in the bytes.
+
+It measures what a visitor downloads — the page's HTML, every same-origin
+stylesheet, every script and `modulepreload`, each distinct file counted once —
+and reports the heaviest pages so a slow drift is visible before it trips.
+Images and fonts are deliberately **not** counted: a hero photograph is a product
+decision rather than a regression, and folding it in would turn the budget into
+"did we add a picture", which is how a gate starts crying wolf. Sizes are
+gzipped, using gzip rather than Brotli because it is the conservative bound.
+
+The budgets live in the script with the measured figures beside them, so raising
+one is a deliberate, reviewable act rather than a quiet edit.
+
 ### Everything at once
 
 ```bash
-npm run verify   # build → check:placeholders → check:links → check:a11y
+npm run verify   # build → check:placeholders → check:links → check:weight → check:a11y
 ```
 
 ## Project structure
@@ -724,7 +745,8 @@ pull request targeting `main`, and can be triggered by hand. One job:
 
 ```text
 npm ci → npm run check → npm run check:recipes → npm run build
-       → npm run check:placeholders → npm run check:links → npm run check:a11y
+       → npm run check:placeholders → npm run check:links
+       → npm run check:weight → npm run check:a11y
 ```
 
 Node 22 is pinned deliberately: [`.nvmrc`](.nvmrc) and `netlify.toml` set the same
