@@ -6,6 +6,16 @@
  * here rather than importing a library.
  */
 
+/**
+ * The play triangle on its own.
+ *
+ * The click-to-play script in BaseLayout needs exactly this one icon, and a
+ * client script that imported the set below would ship all forty paths to every
+ * page to draw one triangle. Declared before `icons` so the set and the script
+ * cannot end up showing two different glyphs.
+ */
+export const playGlyph = '<path d="M8 5.2v13.6L19 12Z"/>';
+
 export const icons = {
   /* ---------- brand / nature -------------------------------------------- */
   leaf: '<path d="M20.5 3.5C10.5 3.5 4 8.6 4 15.2A3.8 3.8 0 0 0 7.8 19c6.6 0 11.7-6.5 11.7-16.5Z"/><path d="M13.5 10.5 4.8 19.2"/>',
@@ -90,7 +100,7 @@ export const icons = {
   info: '<circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.5"/><circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none"/>',
   /** Envelope, for mailto links. */
   mail: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="m3.9 7.4 8.1 5.4 8.1-5.4"/>',
-  play: '<path d="M8 5.2v13.6L19 12Z"/>',
+  play: playGlyph,
 } as const;
 
 export type IconName = keyof typeof icons;

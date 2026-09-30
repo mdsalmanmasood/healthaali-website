@@ -22,6 +22,7 @@
     "check:weight": "node scripts/check-weight.mjs",
     "verify": "npm run check:recipes && npm run build && npm run check:placeholders && npm run check:links && npm run check:weight && npm run check:a11y",
     "assets": "node scripts/extract-assets.mjs",
+    "blog:images": "node scripts/blog-images.mjs",
     "recipes": "node scripts/sync-recipes.mjs"
   },
   "dependencies": {

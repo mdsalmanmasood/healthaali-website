@@ -280,6 +280,18 @@ ol[role="list"],
   border-radius: var(--radius-lg);
 }
 
+/*
+  Captions exist for figures the Markdown writes by hand (a click-to-play video
+  embed, an annotated diagram). They are secondary text: smaller, quieter, and
+  tied to the figure above rather than to the next paragraph.
+*/
+.prose figcaption {
+  margin-top: var(--space-sm);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--muted);
+}
+
 .prose table {
   width: 100%;
   border-collapse: collapse;

@@ -582,6 +582,22 @@ html:not([data-theme]) .theme-toggle__state[data-theme-when="system"] {
   gap: 0.5rem;
 }
 
+/* The bylines on the blog index, as chips with a quiet label in front. */
+.author-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.author-nav__label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 /* ==========================================================================
    Section headings & eyebrows
    ========================================================================== */
@@ -2200,6 +2216,67 @@ a.chip[aria-current="page"] {
 }
 
 /* ==========================================================================
+   Breadcrumbs
+
+   Markup comes from Breadcrumbs.astro and the trail is the same array the
+   `BreadcrumbList` JSON-LD is built from, so the two cannot disagree.
+
+   The separators are CSS generated content, not text in the DOM: a screen
+   reader should announce the stops, not the slashes between them. The last
+   stop is the page you are on, so it is plain text with aria-current instead of
+   a link back to itself.
+   ========================================================================== */
+
+.breadcrumbs {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.breadcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.breadcrumbs__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.breadcrumbs__item + .breadcrumbs__item::before {
+  content: "/";
+  color: var(--border-strong);
+}
+
+.breadcrumbs__link {
+  color: var(--muted-strong);
+  text-decoration: none;
+}
+
+.breadcrumbs__link:hover {
+  color: var(--brand-primary-dark);
+  text-decoration: underline;
+}
+
+.dark .breadcrumbs__link:hover {
+  color: var(--brand-primary-light);
+}
+
+/* The current page: a long post title is clipped rather than allowed to run to
+   three lines above the heading that says the same thing in full. */
+.breadcrumbs__current {
+  overflow: hidden;
+  max-width: 52ch;
+  color: var(--foreground-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
    Blog — listing cards
    Same construction as RecipeCard: exactly one link, and the headline is it,
    with an ::after overlay making the rest of the card a click target.
@@ -2335,6 +2412,103 @@ a.chip[aria-current="page"] {
   color: var(--muted);
 }
 
+/* ==========================================================================
+   Byline
+
+   Two states of one component: the line under a post headline, and the box at
+   the foot of the post. The avatar is a monogram until a real portrait exists —
+   there is no photograph of this author, and a stand-in face would misrepresent
+   who wrote the page.
+   ========================================================================== */
+
+.byline {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: var(--space-lg) 0 0;
+}
+
+.byline__monogram,
+.byline__portrait {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+}
+
+.byline__monogram {
+  display: grid;
+  place-items: center;
+  background-color: var(--brand-primary-soft);
+  color: var(--brand-primary-dark);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+}
+
+.dark .byline__monogram {
+  color: var(--brand-primary-light);
+}
+
+.byline__portrait {
+  object-fit: cover;
+}
+
+.byline__text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.5rem;
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+}
+
+.byline__name {
+  color: var(--foreground);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.byline__name:hover {
+  color: var(--brand-primary-dark);
+  text-decoration: underline;
+}
+
+.dark .byline__name:hover {
+  color: var(--brand-primary-light);
+}
+
+.byline__heading {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+.byline__role {
+  color: var(--muted);
+}
+
+.byline--card {
+  display: block;
+  padding: 1.4rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-elevated);
+}
+
+.byline__head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.byline__bio {
+  max-width: 62ch;
+  margin: var(--space-md) 0 var(--space-lg);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--muted);
+}
+
 .post-tags {
   display: flex;
   flex-wrap: wrap;
@@ -2349,6 +2523,103 @@ a.chip[aria-current="page"] {
   margin-top: var(--space-2xl);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
+}
+
+/* ==========================================================================
+   Blog — click-to-play video embeds
+
+   A post carries the figure, the fallback link and the caption in its Markdown;
+   BaseLayout's script adds the button and, on a press, the <iframe>. Nothing
+   here is required for the page to work without JavaScript — the fallback link
+   is a real link to the same video.
+
+   The button is a button, not a styled link: it loads a player on the page
+   rather than navigating anywhere, and calling it a link would be a lie to
+   anyone listening instead of looking.
+   ========================================================================== */
+
+.yt-embed {
+  margin: 0;
+}
+
+.yt-embed__player {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.yt-embed__player--wide {
+  aspect-ratio: 16 / 9;
+}
+
+/* A Short is shot vertically, so its frame is too — capped, or a 9:16 box at
+   full column width would be taller than the screen. */
+.yt-embed__player--vertical {
+  max-width: 320px;
+  margin-inline: auto;
+  aspect-ratio: 9 / 16;
+}
+
+.yt-embed__play {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  height: 100%;
+  padding: var(--space-lg);
+  border: 0;
+  background: none;
+  color: var(--foreground);
+  font: inherit;
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  text-align: center;
+  cursor: pointer;
+}
+
+.yt-embed__play:hover {
+  background-color: var(--brand-primary-tint);
+}
+
+.yt-embed__play:focus-visible {
+  outline: 3px solid var(--brand-primary);
+  outline-offset: -3px;
+}
+
+.yt-embed__play-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  /* The same pairing the primary buttons use, so the glyph carries a contrast
+     ratio that is already checked in both colour schemes. */
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.yt-embed__play-label {
+  font-size: var(--text-sm);
+  max-width: 34ch;
+}
+
+/* Pre-JavaScript (and pre-upgrade) state: the plain link to the same video. */
+.yt-embed__fallback {
+  display: block;
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+.yt-embed__iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
 .post-nav {

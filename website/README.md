@@ -78,6 +78,8 @@ Windows: **`preview.bat`** builds first, then serves `dist/`.
 | `npm run check:weight` | Fail when a built page exceeds its gzipped HTML/CSS/JS budget |
 | `npm run verify` | `check:recipes` + `build` + `check:placeholders` + `check:links` + `check:weight` + `check:a11y` — exactly what CI runs |
 | `npm run assets` | Re-derive every image from the supplied brand kit |
+| `npm run blog:images` | Convert any blog cover artwork to WebP (quality 75) and wire it into the post |
+| `npm run blog:images -- --prompts` | Rewrite `src/assets/blog/PROMPTS.md` from the prompt manifest |
 | `npm run recipes` | Sync the recipe snapshot from the public YouTube feed |
 
 ### Troubleshooting: “Another astro dev server is already running”
@@ -236,35 +238,39 @@ npm run verify   # build → check:placeholders → check:links → check:weight
 ```text
 src/
 ├── assets/
-│   ├── blog/             post cover images (hand-added; see src/assets/blog/README.md)
+│   ├── authors/          author portraits (optional; see src/assets/authors/README.md)
+│   ├── blog/             post cover images + generation prompts (see
+│   │                     src/assets/blog/README.md)
 │   ├── brand/            logo mark, banner, social square (generated)
 │   ├── recipes/          video thumbnails (downloaded by `npm run recipes`)
 │   └── screens/          13 app screens cut from the product design board (generated)
 ├── components/           Header, MobileMenu, Footer, ThemeToggle, Logo, Button,
 │                         SectionHeading, FeatureCard, AppScreenshot, FAQ,
-│                         DownloadCTA, RecipeCard, PostCard, TopicRail,
-│                         TestimonialCard, Icon, JsonLd, PolicyHistory
+│                         DownloadCTA, RecipeCard, PostCard, TopicRail, Breadcrumbs,
+│                         PostByline, TestimonialCard, Icon, JsonLd, PolicyHistory
 ├── content/
-│   └── blog/             one Markdown file per post (empty until the first one)
+│   └── blog/             one Markdown file per post (six at launch)
 ├── data/                 site, navigation, features, faq, screenshots, testimonials,
 │                         recipes.json (generated) + recipes.ts (typed loader),
-│                         blog.ts (validated blog loader), products.ts,
-│                         schema.ts (site-wide JSON-LD), deletion.ts (request route),
-│                         legal-history.ts (per-document version history)
+│                         blog.ts (validated blog loader), authors.ts (who writes),
+│                         products.ts, schema.ts (site-wide JSON-LD),
+│                         deletion.ts (request route), legal-history.ts (version history)
 ├── layouts/BaseLayout.astro
 ├── lib/
 │   ├── icons.ts          inline stroke icon set (no icon package)
+│   ├── breadcrumbs.ts    one crumb array -> visible trail + BreadcrumbList
 │   ├── post-slug.ts      the one slug function, shared by the loader and the data layer
 │   └── recipe-schema.mjs validator shared by the build and the sync script
-├── pages/                index, features, products, recipes, blog (+ rss.xml and
-│                         tag/[tag]), web-app, android, about, contact, privacy,
-│                         terms, delete-account, 404
+├── pages/                index, features, products, recipes, blog (+ rss.xml,
+│                         tag/[tag] and author/[author]), web-app, android, about,
+│                         contact, privacy, terms, delete-account, 404
 ├── content.config.ts     blog collection: frontmatter schema + slug generation
 └── styles/               tokens.css, global.css, components.css, utilities.css
 public/                   favicon, icons, manifest, robots.txt, og-image
 scripts/
 ├── extract-assets.mjs    re-derive every image from the supplied brand kit
 ├── sync-recipes.mjs      fetch the recipe snapshot from the YouTube feed
+├── blog-images.mjs       blog cover art -> WebP (q75) + frontmatter, and the prompts
 ├── check-links.mjs       link / anchor / sitemap integrity of the built site
 ├── check-placeholders.mjs fail on `[bracketed]` text left in a built page
 └── check-a11y.mjs        WCAG A/AA audit of the built site (axe-core)
@@ -360,10 +366,14 @@ breaks without warning, which is the opposite of what a content page should do.
 
 ### Videos are linked, not embedded
 
-Every card opens the video on YouTube in a new tab. An embed would mean an iframe, a
-third-party script and a `frame-src`/`script-src` exception in the CSP, for content the
-site does not control. Linking is the honest, cheap, privacy-preserving option and keeps
-the security headers tight.
+Every card opens the video on YouTube in a new tab. An embed on a listing page would mean an
+iframe and a third-party script per card, for content the site does not control. Linking is
+the honest, cheap, privacy-preserving option and keeps the security headers tight.
+
+Blog posts do embed videos, one at a time and deliberately — see
+[Videos in a post](#videos-in-a-post). The difference is not an inconsistency: on a post the
+video is the subject of a paragraph, and the play button means the price is paid only by the
+reader who wants it.
 
 ### Validation
 
@@ -400,7 +410,9 @@ Posts are Markdown files in `src/content/blog/`. The file name becomes the URL:
 
 Frontmatter is validated at build time by
 [`src/content.config.ts`](src/content.config.ts). `title`, `description` and `publishedAt`
-are required; `updatedAt`, `tags`, `cover`, `coverAlt` and `draft` are optional.
+are required; `updatedAt`, `tags`, `author`, `cover`, `coverAlt` and `draft` are optional.
+`author` names an entry in [`src/data/authors.ts`](src/data/authors.ts) and defaults to
+the team byline; an unknown id fails the build with the list of known authors.
 
 ### The file name is the URL
 
@@ -429,7 +441,7 @@ flags a duplicate `<h1>`, which means the accessibility gate would not catch it 
 build rejects it instead, naming the file. Fenced code blocks are stripped first, so a `#`
 comment in a shell snippet is fine.
 
-### Covers
+### Covers, and the prompts for them
 
 `cover:` names a file in `src/assets/blog/` (`.png`, `.jpg`, `.jpeg`, `.webp`, `.avif`) and
 `coverAlt` is required alongside it. A name that does not resolve fails the build and lists
@@ -440,9 +452,75 @@ the files that do exist:
        Available: protein-101.jpg
 ```
 
-Astro resizes and re-encodes the cover at build time; commit the good-quality original. The
+Astro resizes and re-encodes the cover at build time for each size the page asks for. The
 listing card renders it with empty alt text because the headline beside it already names the
-post, and the meaningful description is used on the post page.
+post; the meaningful description is used on the post page, in `og:image:alt` and in the
+post's `ImageObject`.
+
+The six launch posts were written before their artwork existed, so the images were specified
+first and generated later. Rather than commit placeholder art, the prompts live in
+the manifest at the top of [`scripts/blog-images.mjs`](scripts/blog-images.mjs), next to the
+alt text they describe, and the script does the wiring:
+
+```bash
+npm run blog:images               # convert what exists, report what does not
+npm run blog:images -- --prompts  # rewrite src/assets/blog/PROMPTS.md
+```
+
+- The artwork is saved as `asset/blog/<post-file-name>.png` (that folder is git-ignored).
+- The script converts it to **WebP at quality 75, 1600 px wide** in `src/assets/blog/`, and
+  inserts `cover:` and `coverAlt:` into that post's frontmatter. The format and the setting
+  live in the script rather than in a note somebody has to remember.
+- **A missing image is not a failure.** The post simply has no cover: the card renders
+  without media, the post page without a hero image, and nothing claims otherwise.
+- `coverAlt` is written before the picture exists, and the script will not overwrite a cover
+  you set by hand. If the image you generate shows something else, change the alt text in
+  the manifest and re-run — an alt text that does not match the picture is worse than none.
+
+### Videos in a post
+
+A post can play one of our recipe videos on the page. The Markdown carries the whole figure,
+because a `.md` file cannot use a component:
+
+```text
+<figure class="yt-embed" data-yt="EiDdnn9bd9w" data-yt-title="A 490-calorie lunch" data-yt-shape="vertical">
+  <a class="yt-embed__fallback" href="https://www.youtube.com/shorts/EiDdnn9bd9w" target="_blank" rel="noopener noreferrer">
+    Watch it on YouTube
+  </a>
+  <figcaption>What the video shows, and why it is here.</figcaption>
+</figure>
+```
+
+Four rules are enforced by `parseVideos` in [`src/data/blog.ts`](src/data/blog.ts), and each
+one fails the build naming the post. They exist because every one of these mistakes produces
+a *quietly* broken player instead of an error:
+
+1. `data-yt` must be exactly 11 URL-safe characters. A malformed id renders "video
+   unavailable".
+2. `data-yt-title` is required. It is the `<iframe>`'s accessible name, so without it the
+   video cannot be announced at all.
+3. A `<figcaption>` is required, and `data-yt-shape` must be `wide` (16:9) or `vertical`
+   (9:16, for the Shorts the channel publishes).
+4. The fallback link must end with the video id. Without JavaScript that link *is* the
+   embed, and a link to a different video would break the page for exactly the reader who
+   has the least.
+
+**Nothing is fetched from Google until someone presses play.** The figure renders as a
+button (built from the same icon set as the rest of the site); the `<iframe>` is created from
+`youtube-nocookie.com` on the click, and the count of `data-yt` attributes must match the
+number of complete figures, so an embed that renders but is missing from the structured data
+is a build failure too.
+
+That is also why `frame-src https://www.youtube-nocookie.com` is in the CSP and why the
+player's host is not something a post can choose. `/recipes` still links out rather than
+embedding — see [Videos are linked, not embedded](#videos-are-linked-not-embedded) for the
+reason that page makes the other choice.
+
+The structured data is derived from the embeds rather than repeated in frontmatter: one
+`VideoObject` per video, inside the post's `BlogPosting`. If the id is one of the channel's
+own videos then `uploadDate`, `thumbnailUrl` and the description come from the committed
+recipe snapshot — real values from the one place they are stored. A video that is not in the
+snapshot gets a name and a URL and nothing invented.
 
 ### Topics and related posts
 
@@ -488,6 +566,41 @@ overlay would be unreachable by keyboard and mouse alike.
 With no posts there are no tags, so no topic pages are generated and no rail is rendered —
 the same empty-state rule as the rest of the blog.
 
+### Authors and bylines
+
+Who wrote a post is data, not copy. [`src/data/authors.ts`](src/data/authors.ts) holds one
+entry per author — name, `role`, a short `bio`, the profiles that belong to them, and
+whether they are the team or a named individual.
+
+Today there is exactly one entry, the team, typed as an `Organization`. That is the honest
+answer rather than a modest one: no individual byline has been supplied, and inventing a
+person, a portrait or a job title would be fabricating a claim about who wrote the page.
+Adding a real person is one entry with `type: "Person"` — every byline, author page and
+`BlogPosting.author` node follows from the array.
+
+- `/blog/author/<id>` is generated for authors **with a published post**, from the posts
+themselves, so an author page cannot exist without a byline pointing at it or vice versa.
+- The page carries a `ProfilePage` whose `mainEntity` is the author, plus the posts as
+  `hasPart`. `mainEntity` is built by the same function the byline uses, so the page a
+  visitor reads and the entity a crawler reads cannot describe different people.
+- The byline has no portrait until one is supplied in `src/assets/authors/`. It shows a
+  monogram instead of a stand-in face.
+- A post's `author` is the full node, with `parentOrganization` for the team, so a crawler
+  can get from "HealThaali Kitchen wrote this" to the brand the rest of the site describes.
+
+### Breadcrumbs
+
+One array, in [`src/lib/breadcrumbs.ts`](src/lib/breadcrumbs.ts), produces both the visible
+trail and the `BreadcrumbList`. Written separately they drift: a page gets renamed and only
+one of the two is updated, and search results start showing a path the site no longer
+serves.
+
+Every crumb carries its own `href`, including the last one — the schema wants a URL for
+every step, and a breadcrumb that links to the page you are already on is the one thing a
+breadcrumb must not do. `Breadcrumbs.astro` decides: the final crumb is plain text with
+`aria-current="page"`. The separators are CSS `::before` content, so a screen reader
+announces the stops rather than the slashes between them.
+
 ### The feed
 
 `/blog/rss.xml` is generated from the same posts with no feed library. Escaping (including
@@ -505,19 +618,32 @@ external destinations; auto-rewriting author-written Markdown links would need a
 dependency, and silently changing how an author's link behaves is worse than the
 inconsistency.
 
-### The empty state is deliberate
+### The empty state is still there
 
-The blog ships with **no posts**, because none has been written. Rather than padding it with
-articles nobody wrote, `/blog` renders an honest "the first post is being written" state
-that points at `/recipes`, which does have real content. Two consequences are expected, and
-neither is a bug:
+There are six posts at launch, and the blog's empty state was written before them and kept.
+It is not decoration: with no published posts, `/blog` renders "the first post is being
+written" and points at `/recipes`, no topic pages are generated, and the RSS feed omits
+`lastBuildDate` rather than stamping the build time.
 
-- `[WARN] [glob-loader] No files found matching …` appears in every build while the
-directory is empty. It disappears with the first post.
+Two consequences of that state are expected when it happens, and neither is a bug:
+
+- `[WARN] [glob-loader] No files found matching …` in the build log while the directory has
+  no posts.
 - `/blog` stays indexable and stays in the sitemap. Excluding a `noindex` page from the
-sitemap is consistent, but a single thin page that is linked from the navigation anyway
-would gain nothing from being hidden, and the empty state is real content rather than a
-stub.
+  sitemap is consistent, but a single thin page that is linked from the navigation anyway
+  would gain nothing from being hidden, and the empty state is real content rather than a
+  stub.
+
+### Writing a post, end to end
+
+1. Write the Markdown in `src/content/blog/` — body headings start at `##`, and the file
+   name is the URL.
+2. Embed any recipe video with a `<figure class="yt-embed">` block (above), or none at all.
+3. Add a cover: put the artwork in `asset/blog/<file-name>.png` and run
+   `npm run blog:images`.
+4. Run `npm run verify`. It type-checks, builds, and then checks placeholders, links, page
+   weight and accessibility against the built output — which is where a missing alt text, a
+   broken internal link or an over-budget page shows up.
 
 ## Products
 
@@ -575,8 +701,20 @@ Light, dark and system are all supported:
     update the page and the markup in the same edit.
   - `SoftwareApplication` on the homepage, `BreadcrumbList` on inner pages,
     `Blog` on the listing, `BlogPosting` on each post, `CollectionPage` on each
-    tag page, `ContactPage` on `/contact`, `ItemList` of `VideoObject` on
-    `/recipes`
+    tag page, `ProfilePage` on each author page, `ContactPage` on `/contact`,
+    `ItemList` of `VideoObject` on `/recipes`
+  - **A post is described as what it is**: `wordCount`, `articleSection` and
+    `keywords` from the post itself, an `ImageObject` with the cover's real
+    dimensions, `author` from the author registry, `publisher` and `isPartOf`
+    pointing at the site-wide `Organization` and the blog's `Blog` node by `@id`,
+    and one nested `VideoObject` per embedded video
+  - **Article Open Graph fields on posts only**: `og:type=article` plus
+    `article:published_time`, `article:modified_time`, `article:author` and one
+    `article:tag` per tag. `og:image:alt` and `twitter:image:alt` carry the
+    cover's alt text — a social card is read aloud like any other image
+  - **Breadcrumbs are visible and structured at once**, from one array
+    (`src/lib/breadcrumbs.ts`): the trail a reader can click and the
+    `BreadcrumbList` a crawler reads cannot describe different paths
 - `/blog/rss.xml` — an RSS 2.0 feed, advertised with
   `<link rel="alternate" type="application/rss+xml">` on the blog pages
 - One `<h1>` per page, descriptive alt text on every image, custom `404.astro`

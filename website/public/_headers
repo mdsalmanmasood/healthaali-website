@@ -17,6 +17,12 @@
 # stylesheets into the HTML.
 # `static.cloudflareinsights.com` is only used when PUBLIC_ANALYTICS_ID is set.
 #
+# `frame-src https://www.youtube-nocookie.com` exists so a blog post can embed a
+# recipe video. The host is YouTube's privacy-preserving player origin, and it is
+# the ONLY frame this site allows. The player is not requested on page load:
+# a post renders a button, and the <iframe> is created from script when someone
+# presses it (see the click-to-play note in src/layouts/BaseLayout.astro).
+#
 # `form-action` is deliberately NOT set. The contact form posts to
 # PUBLIC_CONTACT_ENDPOINT, which does not exist yet, so any value here would be a
 # guess that could silently break the form. Once the endpoint is real, add THIS
@@ -27,7 +33,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-src https://www.youtube-nocookie.com; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

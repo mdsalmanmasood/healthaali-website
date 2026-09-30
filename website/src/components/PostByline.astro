@@ -1,0 +1,76 @@
+---
+import { Image } from "astro:assets";
+
+import Icon from "./Icon.astro";
+import { authorPath, authorPortrait, type Author } from "../data/authors";
+
+interface Props {
+  author: Author;
+  /** `compact` is the line under the headline; `card` is the box at the foot. */
+  variant?: "compact" | "card";
+}
+
+const { author, variant = "compact" } = Astro.props;
+
+const portrait = authorPortrait(author);
+const href = authorPath(author.id);
+
+/*
+  A monogram rather than a stock portrait or a generated face. There is no
+  photograph of this author, and inventing one would be a lie about a person (or
+  in this case about a team), so the byline shows the initials instead until a
+  real image is supplied in src/assets/authors/.
+*/
+const monogram = author.name
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((word) => word.charAt(0).toUpperCase())
+  .join("");
+---
+
+{
+  variant === "compact" ? (
+    <p class="byline">
+      {portrait ? (
+        <Image src={portrait} alt="" width={80} height={80} class="byline__portrait" />
+      ) : (
+        <span class="byline__monogram" aria-hidden="true">
+          {monogram}
+        </span>
+      )}
+      <span class="byline__text">
+        <span>
+          By{" "}
+          <a class="byline__name" href={href}>
+            {author.name}
+          </a>
+        </span>
+        <span class="byline__role">{author.role}</span>
+      </span>
+    </p>
+  ) : (
+    <div class="byline byline--card">
+      <div class="byline__head">
+        {portrait ? (
+          <Image src={portrait} alt="" width={80} height={80} class="byline__portrait" />
+        ) : (
+          <span class="byline__monogram" aria-hidden="true">
+            {monogram}
+          </span>
+        )}
+        <span class="byline__text">
+          <span class="byline__heading">{author.name}</span>
+          <span class="byline__role">{author.role}</span>
+        </span>
+      </div>
+
+      <p class="byline__bio">{author.bio}</p>
+
+      <a class="link-arrow" href={href}>
+        All posts by {author.name}
+        <Icon name="arrowRight" size={15} />
+      </a>
+    </div>
+  )
+}

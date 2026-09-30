@@ -1,0 +1,140 @@
+---
+/**
+ * One page per author who has published something.
+ *
+ * Like the topic pages, this route is built from the posts rather than from a
+ * hand-kept list: `authorsUsedBy` reads the authors the published posts name, so
+ * an author page appears with their first post and disappears when their last
+ * one is unpublished. Nothing links to a page that does not exist.
+ */
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import Button from "../../../components/Button.astro";
+import JsonLd from "../../../components/JsonLd.astro";
+import PostCard from "../../../components/PostCard.astro";
+import SectionHeading from "../../../components/SectionHeading.astro";
+
+import { blogId, blogPath, getPosts, type BlogPost } from "../../../data/blog";
+import {
+  authorPath,
+  authorSchemaNode,
+  authorsUsedBy,
+  type Author,
+} from "../../../data/authors";
+import { absoluteUrl } from "../../../data/site";
+import { breadcrumbSchema, type Crumb } from "../../../lib/breadcrumbs";
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+
+  return authorsUsedBy(posts).map((author) => ({
+    params: { author: author.id },
+    props: {
+      author,
+      posts: posts.filter((post) => post.author.id === author.id),
+    },
+  }));
+}
+
+interface Props {
+  author: Author;
+  posts: BlogPost[];
+}
+
+const { author, posts } = Astro.props;
+
+const url = absoluteUrl(authorPath(author.id));
+const count = posts.length;
+const countLabel = `${count} ${count === 1 ? "post" : "posts"}`;
+
+/* The visible trail and the BreadcrumbList are both built from this array. */
+const crumbs: Crumb[] = [
+  { name: "Home", href: "/" },
+  { name: "Blog", href: blogPath },
+  { name: author.name, href: authorPath(author.id) },
+];
+const breadcrumbs = breadcrumbSchema(crumbs);
+
+/*
+  A ProfilePage whose `mainEntity` is the author, with the posts as its parts.
+  The author node itself comes from src/data/authors.ts, so the page a reader
+  sees and the entity a crawler reads describe the same thing — including the
+  profiles it is verified on, and no job title or credential that was not
+  supplied.
+*/
+const profileSchema = {
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  name: `Posts by ${author.name}`,
+  description: author.bio,
+  url,
+  inLanguage: "en",
+  isPartOf: { "@id": blogId },
+  mainEntity: authorSchemaNode(author),
+  hasPart: posts.map((post) => ({
+    "@type": "BlogPosting",
+    headline: post.title,
+    url: absoluteUrl(post.href),
+    datePublished: post.publishedAt.toISOString(),
+  })),
+};
+---
+
+<BaseLayout
+  title={`Posts by ${author.name}`}
+  description={`${author.role} — every post written by ${author.name}, newest first.`}
+  canonical={authorPath(author.id)}
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+    <JsonLd data={profileSchema} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container">
+      <Breadcrumbs crumbs={crumbs} />
+      <h1 class="page-hero__title">{author.name}</h1>
+      <p class="page-hero__lead">{author.role}</p>
+      <p class="page-hero__lead">{author.bio}</p>
+
+      {
+        author.profiles.length > 0 && (
+          <nav class="anchor-nav mt-lg" aria-label={`${author.name} elsewhere`}>
+            {author.profiles.map((profile) => (
+              <a
+                class="chip chip--brand"
+                href={profile.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {profile.name}
+                <span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            ))}
+          </nav>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="section--tight" aria-labelledby="author-posts-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow={countLabel}
+        eyebrowIcon="list"
+        title={`Written by ${author.name}`}
+        id="author-posts-title"
+      />
+
+      <ul class="card-grid card-grid--3 mt-2xl list-reset" role="list">
+        {posts.map((post) => <PostCard post={post} />)}
+      </ul>
+
+      <div class="page-hero__actions mt-2xl">
+        <Button href={blogPath} variant="secondary" icon="arrowRight" iconPosition="end">
+          All posts
+        </Button>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

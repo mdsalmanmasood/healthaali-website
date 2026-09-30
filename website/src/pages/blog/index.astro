@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import Button from "../../components/Button.astro";
 import Icon from "../../components/Icon.astro";
 import JsonLd from "../../components/JsonLd.astro";
@@ -7,8 +8,18 @@ import PostCard from "../../components/PostCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 import TopicRail from "../../components/TopicRail.astro";
 
-import { blogFeedPath, blogPath, collectTags, formatPostDate, getPosts } from "../../data/blog";
+import {
+  blogFeedPath,
+  blogId,
+  blogPath,
+  collectTags,
+  formatPostDate,
+  getPosts,
+} from "../../data/blog";
+import { authorsUsedBy, authorPath } from "../../data/authors";
+import { organizationId } from "../../data/schema";
 import { site, siteUrl } from "../../data/site";
+import { breadcrumbSchema, type Crumb } from "../../lib/breadcrumbs";
 
 const posts = await getPosts();
 const posted = posts.length > 0;
@@ -19,14 +30,15 @@ const tags = collectTags(posts);
 
 const pageUrl = `${siteUrl}${blogPath}`;
 
-const breadcrumbs = {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  itemListElement: [
-    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
-    { "@type": "ListItem", position: 2, name: "Blog", item: pageUrl },
-  ],
-};
+/* The visible trail and the BreadcrumbList are both built from this array. */
+const crumbs: Crumb[] = [
+  { name: "Home", href: "/" },
+  { name: "Blog", href: blogPath },
+];
+const breadcrumbs = breadcrumbSchema(crumbs);
+
+// Authors with at least one published post. Empty while the blog is empty.
+const authors = authorsUsedBy(posts);
 
 /*
   The Blog node carries a `blogPost` list only when there are posts. An empty
@@ -36,10 +48,14 @@ const breadcrumbs = {
 const blogSchema = {
   "@context": "https://schema.org",
   "@type": "Blog",
+  // A stable @id so each post can say it `isPartOf` this blog without
+  // repeating what the blog is.
+  "@id": blogId,
   name: `The ${site.name} blog`,
   url: pageUrl,
   description:
     "Notes from the HealThaali kitchen on cooking with less oil, balanced Indian meals and steady progress.",
+  publisher: { "@id": organizationId },
   ...(posted
     ? { blogPost: posts.map((post) => `${siteUrl}${post.href}`) }
     : {}),
@@ -59,10 +75,7 @@ const blogSchema = {
 
   <section class="page-hero">
     <div class="container">
-      <p class="eyebrow">
-        <span class="eyebrow__dot" aria-hidden="true"></span>
-        Blog
-      </p>
+      <Breadcrumbs crumbs={crumbs} />
       <h1 class="page-hero__title">Notes from the kitchen</h1>
       <p class="page-hero__lead">
         Longer-form writing than a video allows: what we cook with, why a dish is built the way it
@@ -96,6 +109,24 @@ const blogSchema = {
                 <div class="mt-xl">
                   <TopicRail tags={tags} />
                 </div>
+              )
+            }
+
+            {/*
+              Every author with a published post, linked by name. The author
+              page exists because the posts say who wrote them; without a link
+              to it, the byline would be a claim with no way to check it.
+            */}
+            {
+              authors.length > 0 && (
+                <nav class="author-nav mt-lg" aria-label="Authors">
+                  <span class="author-nav__label">Written by</span>
+                  {authors.map((author) => (
+                    <a class="chip chip--brand" href={authorPath(author.id)}>
+                      {author.name}
+                    </a>
+                  ))}
+                </nav>
               )
             }
 

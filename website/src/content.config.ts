@@ -74,6 +74,16 @@ const blog = defineCollection({
     tags: z.array(z.string().min(1)).default([]),
 
     /**
+     * Id of the author in `src/data/authors.ts`, e.g. `healthaali-kitchen`.
+     *
+     * Optional: a post with no byline is attributed to the team rather than to
+     * nobody. The id is checked against the author list in src/data/blog.ts,
+     * which can name the offending post — a Zod enum here would only report the
+     * list of allowed values.
+     */
+    author: z.string().min(1).optional(),
+
+    /**
      * `draft: true` keeps a post out of the site, the sitemap and the RSS feed
      * — in development as well as in a production build. There is deliberately
      * no "preview drafts locally" escape hatch: one code path means a draft can

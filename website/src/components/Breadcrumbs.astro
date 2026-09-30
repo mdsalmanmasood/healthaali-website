@@ -1,0 +1,43 @@
+---
+import type { Crumb } from "../lib/breadcrumbs";
+
+interface Props {
+  /** The trail, first crumb first. The last one is the page you are on. */
+  crumbs: Crumb[];
+}
+
+const { crumbs } = Astro.props;
+
+/*
+  The separators are drawn in CSS (`::before` on every crumb after the first)
+  rather than written into the markup, so a screen reader announces "Home, Blog,
+  title" and not "Home, slash, Blog, slash, title". The list is a real <ol>
+  because the order is the meaning.
+
+  The current page is a <span> with aria-current, not a link to itself. A
+  self-link reads as a destination and goes nowhere.
+*/
+---
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumbs__list list-reset">
+    {
+      crumbs.map((crumb, index) => {
+        const isCurrent = index === crumbs.length - 1;
+        return (
+          <li class="breadcrumbs__item">
+            {isCurrent ? (
+              <span class="breadcrumbs__current" aria-current="page">
+                {crumb.name}
+              </span>
+            ) : (
+              <a class="breadcrumbs__link" href={crumb.href}>
+                {crumb.name}
+              </a>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>

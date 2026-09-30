@@ -3,13 +3,16 @@ import { Image } from "astro:assets";
 import { render } from "astro:content";
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import Icon from "../../components/Icon.astro";
 import JsonLd from "../../components/JsonLd.astro";
+import PostByline from "../../components/PostByline.astro";
 import PostCard from "../../components/PostCard.astro";
 import SectionHeading from "../../components/SectionHeading.astro";
 
 import {
   blogFeedPath,
+  blogId,
   blogPath,
   formatPostDate,
   getPosts,
@@ -18,7 +21,23 @@ import {
   tagHref,
   type BlogPost,
 } from "../../data/blog";
-import { absoluteUrl, site, siteUrl } from "../../data/site";
+import { authorPath, authorSchemaNode } from "../../data/authors";
+import { medicalDisclaimer } from "../../data/features";
+import { recipes } from "../../data/recipes";
+import { organizationId } from "../../data/schema";
+import { absoluteUrl, site } from "../../data/site";
+import { breadcrumbSchema, type Crumb } from "../../lib/breadcrumbs";
+
+/**
+ * The channel's own snapshot, keyed by video id.
+ *
+ * A post that embeds one of our recipes gets the real upload date, thumbnail
+ * and description in its structured data instead of a VideoObject with only a
+ * name — the same facts the recipes page already publishes, from the one place
+ * they are stored. A video that is not in the snapshot simply gets fewer
+ * fields; nothing is guessed.
+ */
+const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
 
 export async function getStaticPaths() {
   const posts = await getPosts();
@@ -49,21 +68,46 @@ const { Content } = await render(post.entry);
 
 const url = absoluteUrl(post.href);
 
-const breadcrumbs = {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  itemListElement: [
-    { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
-    { "@type": "ListItem", position: 2, name: "Blog", item: `${siteUrl}${blogPath}` },
-    { "@type": "ListItem", position: 3, name: post.title, item: url },
-  ],
-};
+/* The visible trail and the BreadcrumbList are both built from this array. */
+const crumbs: Crumb[] = [
+  { name: "Home", href: "/" },
+  { name: "Blog", href: blogPath },
+  { name: post.title, href: post.href },
+];
+const breadcrumbs = breadcrumbSchema(crumbs);
 
 /*
-  BlogPosting, built only from fields that actually exist. `author` is the
-  organisation rather than a person: no individual byline is recorded, and
-  inventing a name would be worse than attributing the post to the team that
-  wrote it. `dateModified` falls back to the publication date, which is true.
+  One VideoObject per embed, taken from the embeds that are actually in the
+  body (see `parseVideos` in src/data/blog.ts) rather than from a second list in
+  frontmatter that could drift out of step with the page.
+*/
+const videoNodes = post.videos.map((video) => {
+  const recipe = recipeById.get(video.id);
+
+  return {
+    "@type": "VideoObject",
+    name: video.title,
+    url: video.watchUrl,
+    embedUrl: video.embedUrl,
+    contentUrl: video.watchUrl,
+    inLanguage: "en",
+    ...(recipe
+      ? {
+          description: recipe.description,
+          uploadDate: recipe.published,
+          thumbnailUrl: absoluteUrl(recipe.image.src),
+        }
+      : {}),
+    publisher: { "@id": organizationId },
+  };
+});
+
+/*
+  BlogPosting, built only from fields that actually exist. The author comes from
+  src/data/authors.ts — the team today, a named person when one is added there —
+  and `publisher` and `isPartOf` reference the site-wide Organization and the
+  blog index's Blog node by `@id` rather than restating them. `dateModified`
+  falls back to the publication date, which is true.
 */
 const postSchema = {
   "@context": "https://schema.org",
@@ -75,10 +119,24 @@ const postSchema = {
   datePublished: post.publishedAt.toISOString(),
   dateModified: (post.updatedAt ?? post.publishedAt).toISOString(),
   inLanguage: "en",
-  author: { "@type": "Organization", name: site.name, url: `${siteUrl}/` },
-  publisher: { "@type": "Organization", name: site.name, url: `${siteUrl}/` },
-  ...(post.coverUrl ? { image: post.coverUrl } : {}),
-  ...(post.tags.length > 0 ? { keywords: post.tags.join(", ") } : {}),
+  wordCount: post.wordCount,
+  author: authorSchemaNode(post.author),
+  publisher: { "@id": organizationId },
+  isPartOf: { "@id": blogId },
+  ...(post.tags.length > 0
+    ? { articleSection: post.tags[0], keywords: post.tags.join(", ") }
+    : {}),
+  ...(post.cover && post.coverUrl
+    ? {
+        image: {
+          "@type": "ImageObject",
+          url: post.coverUrl,
+          width: post.cover.width,
+          height: post.cover.height,
+        },
+      }
+    : {}),
+  ...(videoNodes.length > 0 ? { video: videoNodes } : {}),
 };
 
 const wasUpdated = post.updatedAt && post.updatedAt.getTime() > post.publishedAt.getTime();
@@ -88,10 +146,27 @@ const wasUpdated = post.updatedAt && post.updatedAt.getTime() > post.publishedAt
   title={post.title}
   description={post.description}
   image={post.coverUrl ?? "/og-image.jpg"}
+  imageAlt={post.coverAlt}
+  type="article"
   canonical={post.href}
 >
   <Fragment slot="head">
     <link rel="alternate" type="application/rss+xml" title={`${site.name} blog`} href={blogFeedPath} />
+
+    {/*
+      The article's own Open Graph fields, which `og:type=article` promises.
+      They are emitted here rather than in BaseLayout because only a post knows
+      them — every other page on the site is a plain website.
+    */}
+    <meta property="article:published_time" content={post.publishedAt.toISOString()} />
+    {
+      post.updatedAt && (
+        <meta property="article:modified_time" content={post.updatedAt.toISOString()} />
+      )
+    }
+    <meta property="article:author" content={absoluteUrl(authorPath(post.author.id))} />
+    {post.tags.map((tag) => <meta property="article:tag" content={tag} />)}
+
     <JsonLd data={breadcrumbs} />
     <JsonLd data={postSchema} />
   </Fragment>
@@ -99,12 +174,11 @@ const wasUpdated = post.updatedAt && post.updatedAt.getTime() > post.publishedAt
   <article>
     <section class="page-hero">
       <div class="container container--narrow">
-        <p class="eyebrow">
-          <span class="eyebrow__dot" aria-hidden="true"></span>
-          <a class="eyebrow__link" href={blogPath}>Blog</a>
-        </p>
+        <Breadcrumbs crumbs={crumbs} />
 
         <h1 class="page-hero__title">{post.title}</h1>
+
+        <PostByline author={post.author} />
 
         <p class="post-meta">
           <time datetime={postDateAttribute(post.publishedAt)}>
@@ -172,6 +246,14 @@ const wasUpdated = post.updatedAt && post.updatedAt.getTime() > post.publishedAt
         <div class="prose">
           <Content />
         </div>
+
+        {/*
+          The same scope statement /features and the app pages carry, in the same
+          words and from the same module — a post about food is still general
+          information, and this says so on the page rather than in a footer
+          nobody reads.
+        */}
+        <p class="notice mt-xl">{medicalDisclaimer}</p>
       </div>
     </section>
   </article>
@@ -197,6 +279,18 @@ const wasUpdated = post.updatedAt && post.updatedAt.getTime() > post.publishedAt
       </section>
     )
   }
+
+  {/*
+    Who wrote this, on the page itself rather than only in the markup. A byline
+    that links to an author page with a real description is the part of
+    authorship a reader (and a search engine's quality rater) can check.
+  */}
+  <section class="section--tight" aria-labelledby="post-author-title">
+    <div class="container container--narrow">
+      <h2 class="sr-only" id="post-author-title">About the author</h2>
+      <PostByline author={post.author} variant="card" />
+    </div>
+  </section>
 
   <section class="section" aria-labelledby="post-nav-title">
     <div class="container container--narrow">

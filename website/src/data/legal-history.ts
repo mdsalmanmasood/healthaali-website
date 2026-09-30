@@ -73,8 +73,17 @@ function assertNewestFirst(documentName: string, versions: PolicyVersion[]): Pol
 /** Versions of the privacy policy, newest first. The first is in force. */
 export const privacyPolicyHistory = assertNewestFirst("Privacy Policy", [
   {
+    effectiveDate: "2026-09-30",
+    summary: "Added a note about the videos embedded on the blog.",
+    details: [
+      "Stated that an embedded video is not requested from Google until the visitor presses play, and that it is served from youtube-nocookie.com.",
+      "Stated that Google's own privacy policy applies to the player from that point, including any cookies it sets.",
+      "Pointed at the YouTube channel for anyone who would rather not load the player at all.",
+    ],
+  },
+  {
     effectiveDate: "2026-09-29",
-    summary: "First version — the text currently on this page.",
+    summary: "First version.",
     details: [
       "Set out what the app collects, how it is used, where it is stored, and how long it is kept.",
       "Documented both routes for deleting an account and the data attached to it.",
