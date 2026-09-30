@@ -597,8 +597,12 @@ public DNS, RDAP and HTTPS, and exits non-zero only on a real problem rather tha
 on items that are simply not done yet. Give it a read-only `CLOUDFLARE_API_TOKEN`
 and it reads the dashboard settings themselves as well — the Pages build
 configuration, the custom domains and the zone's records — since none of those
-leave a public trace to infer from. It is not part of `npm run verify`, which
-stays offline and hermetic on purpose.
+leave a public trace to infer from. The same check runs unattended every six
+hours in
+[`launch-check.yml`](../.github/workflows/launch-check.yml), which installs
+nothing but Node, so a dependency problem can never masquerade as a deployment
+problem. It is not part of `npm run verify`, which stays offline and hermetic on
+purpose.
 
 ### Cloudflare Pages (recommended — free, no Node server needed)
 

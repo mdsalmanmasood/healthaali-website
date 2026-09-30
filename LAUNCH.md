@@ -129,10 +129,19 @@ Every pull request also gets a preview deployment; only `main` is production.
 | `ci.yml` | push / PR to `main`, manual | install, typecheck, recipes, build, placeholders, links, a11y |
 | `sync-recipes.yml` | daily 03:00 UTC, manual | proposes the YouTube snapshot as a PR only when it really changed |
 | `uptime.yml` | every six hours at :17, manual | probes the live domain and its certificate |
+| `launch-check.yml` | every six hours at :47, manual | re-runs `check:launch`, so launch regressions are caught without anyone looking |
 
 `uptime.yml` fails until the domain serves the Pages project — that is the
-intended signal, not a broken workflow. GitHub disables scheduled workflows
-after 60 days without repository activity; any commit resets that clock.
+intended signal, not a broken workflow. `launch-check.yml` is the same idea one
+level deeper: it runs `check:launch` on a schedule, so a reinstated parking
+record, a registrar hold, a lost CSP or a certificate running out of validity
+fails a run instead of waiting to be noticed. It installs nothing but Node, so a
+broken lockfile cannot disguise a deployment problem. Optionally set a read-only
+`CLOUDFLARE_API_TOKEN` **repository secret** and it performs the deep checks
+there too; without the secret it reports them as outstanding and passes.
+
+GitHub disables scheduled workflows after 60 days without repository activity;
+any commit resets that clock.
 
 ## 5. Checking any of this without dashboard access
 
@@ -194,3 +203,7 @@ Without the variable the deep checks report themselves as outstanding and change
 nothing else. With a token that is expired or under-scoped, they fail loudly with
 the API's own error rather than passing quietly — a dead token must not look like
 a healthy deployment.
+
+The same check runs unattended as `launch-check.yml` every six hours. It reads
+the token from a repository secret of the same name when one exists, so a
+deployment problem is reported by a failed run rather than by a visitor.

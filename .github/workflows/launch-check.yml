@@ -1,0 +1,106 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HealThaali — scheduled launch-state check
+#
+# `uptime.yml` answers "is the site up?". This answers a different question:
+# "is the deployment still the one LAUNCH.md describes?" The regressions it
+# exists to catch are the ones no build can see and no dashboard will remind you
+# of — the registrar putting the domain back on hold, the parking records
+# reappearing, DNS quietly pointing somewhere else, the host serving someone
+# else's page, the CSP from `_headers` going missing, a certificate running out
+# of validity, mail records disappearing.
+#
+# Why this installs nothing
+# -------------------------
+# `website/scripts/check-launch.mjs` uses only Node's built-ins: no
+# dependencies, no build step, no lockfile. So this job runs `node` directly and
+# skips `npm ci` on purpose. A launch check that fails because a dependency could
+# not be installed would be reporting the wrong problem. The repository is still
+# checked out, because the check *is* code — that is the one shared fate worth
+# accepting.
+#
+# The optional token
+# ------------------
+# If a read-only `CLOUDFLARE_API_TOKEN` repository secret exists, the check also
+# reads the zone, its records, the Pages build settings, the custom domains and
+# the names (never the values) of the environment variables — see LAUNCH.md §5
+# for the three scopes it needs. Without the secret the job still runs and
+# reports the deep checks as outstanding, so adding the secret later requires no
+# change to this file.
+#
+# Caveats worth knowing
+# ---------------------
+#   - GitHub disables scheduled workflows in repositories with no activity for
+#     60 days; any commit resets that clock. `workflow_dispatch` runs it by hand.
+#   - A failing scheduled run emails the repository owner. That is the intent:
+#     a silent launch check is not a launch check.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Launch check
+
+on:
+  schedule:
+    # Every six hours, at :47 — deliberately offset from uptime.yml's :17 so the
+    # two probes never query the same endpoints in the same minute.
+    - cron: "47 */6 * * *"
+  workflow_dispatch:
+
+# A queued check is harmless; a cancelled one is a missed regression.
+concurrency:
+  group: launch-check
+  cancel-in-progress: false
+
+# Nothing here writes to the repository.
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # The website is a project inside the repository, not the repository root.
+    working-directory: website
+
+jobs:
+  launch:
+    name: Check the launch state
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      # Empty when the secret is absent, which the script reports as "deep
+      # checks skipped" rather than as a failure.
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          # No `cache: npm` here: there is nothing to cache, because nothing is
+          # installed.
+
+      # The output goes to the job summary as well as the log, so a failure can
+      # be read without expanding a step. The exit status is captured and
+      # re-raised explicitly: a pipeline that ends in `tee` or a redirect would
+      # otherwise swallow it.
+      - name: Report the launch state
+        run: |
+          set -o pipefail
+
+          status=0
+          output=$(node scripts/check-launch.mjs 2>&1) || status=$?
+
+          printf '%s\n' "$output"
+
+          {
+            echo '```text'
+            printf '%s\n' "$output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" -ne 0 ]; then
+            echo "::error::the launch state has regressed — see the job summary"
+          fi
+
+          exit "$status"
