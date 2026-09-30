@@ -589,12 +589,50 @@ disabled control that activates the moment the matching variable is set.
 
 Static output, so any host works. Config for all three is already in the repo.
 
-**Cloudflare Pages** (recommended — free, no Node server needed)
+### Cloudflare Pages (recommended — free, no Node server needed)
 
-```text
-Build command:     npm run build
-Output directory:  dist
-```
+1. **Create the project** — *Workers & Pages* → *Create* → *Pages* → *Connect to
+   Git*, authorize GitHub, and pick this repository.
+2. **Build settings** (*Set up builds and deployments*):
+
+   ```text
+   Production branch:      main
+   Root directory:         website   ← advanced field; the Astro app is in this subdirectory
+   Build command:          npm run build
+   Build output directory: dist
+   ```
+
+   `website/.nvmrc` pins the build to Node 22, the same major version CI and
+   `netlify.toml` use. Nothing to set in the dashboard.
+3. **Environment variables** are optional — with none set the build produces the
+   honest "coming soon" state described above. Add real values under *Settings* →
+   *Environment variables* (Production) and redeploy to apply them.
+4. Pushes to `main` deploy to production; every pull request gets a preview URL.
+   The first build prints a `*.pages.dev` address that already serves the site,
+   before any DNS change.
+
+### Custom domain and DNS (the domain is registered at GoDaddy)
+
+Add the domain in *Custom domains* → *Set up a custom domain*. What works next
+depends on who runs DNS for `healthaali.in`:
+
+- **Move the zone to Cloudflare (recommended).** Both `healthaali.in` and
+  `www.healthaali.in` are then one click each: Cloudflare writes the records,
+  flattens the apex CNAME, and issues the certificate. The HTML is built for the
+  apex origin (`PUBLIC_SITE_URL` defaults to `https://healthaali.in`), so this is
+  the configuration the canonicals and sitemap already assume.
+  To move it: Cloudflare → *Add a site* → `healthaali.in` (Free plan) → copy the
+  two nameservers → GoDaddy → *Domain settings* → *Nameservers* → *Change* → paste
+  them. Cloudflare imports existing records during setup: **confirm any MX/TXT mail
+  records survived before the change goes through.**
+- **Keep DNS at GoDaddy.** External DNS cannot host the apex on Pages — GoDaddy
+  does not allow a CNAME at the root. Only `www` works: add a GoDaddy CNAME record
+  `www` → `<project>.pages.dev` (the Pages wizard shows the exact target), then
+  forward the apex to `https://www.healthaali.in` with GoDaddy forwarding. Set
+  `PUBLIC_SITE_URL=https://www.healthaali.in` and redeploy, otherwise canonicals,
+  `og:url` and the sitemap keep naming a host that is not serving the page.
+
+### Other hosts
 
 **Netlify** — `netlify.toml` is committed, so there is nothing to configure in the UI.
 
@@ -657,8 +695,9 @@ npm ci → npm run check → npm run check:recipes → npm run build
        → npm run check:placeholders → npm run check:links → npm run check:a11y
 ```
 
-Node 22 is pinned deliberately: it is the version `netlify.toml` sets for the
-real deployment, so CI tests the runtime the site actually ships on. **No
+Node 22 is pinned deliberately: [`.nvmrc`](.nvmrc) and `netlify.toml` set the same
+major version for the real deployments, so CI tests the runtime the site actually
+ships on. **No
 environment variables are set.** Every `PUBLIC_` value is optional, and with all
 of them empty the build produces the honest "coming soon" placeholder state —
 which is exactly the state that should be verified.
