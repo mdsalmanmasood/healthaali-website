@@ -4,7 +4,7 @@ import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import JsonLd from "../components/JsonLd.astro";
 import { siteSchema } from "../data/schema";
-import { absoluteUrl, analyticsId, site, siteUrl } from "../data/site";
+import { absoluteUrl, analyticsId, buildCommit, site, siteUrl } from "../data/site";
 
 import "../styles/tokens.css";
 import "../styles/global.css";
@@ -82,6 +82,13 @@ const ogType = "website";
     <meta name="theme-color" content="#fdfbf5" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b1511" media="(prefers-color-scheme: dark)" />
     <meta name="generator" content={Astro.generator} />
+    <!--
+      Which revision this page was built from. The host supplies it
+      (CF_PAGES_COMMIT_SHA on Cloudflare Pages, GITHUB_SHA in Actions) and
+      `npm run check:launch` compares it against the repository's HEAD, so a
+      deployment that is serving the wrong commit says so out loud.
+    -->
+    <meta name="build-commit" content={buildCommit} />
 
     <!--
       Theme boot. Runs before anything paints so dark mode never flashes white.

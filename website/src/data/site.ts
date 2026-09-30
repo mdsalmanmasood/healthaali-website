@@ -43,6 +43,30 @@ export const legalAddress = {
 /** The same location as it reads in prose: “Bengaluru, Karnataka, India”. */
 export const legalLocationLabel = `${legalAddress.locality}, ${legalAddress.region}, ${legalAddress.country}`;
 
+/**
+ * The revision this build was produced from, short, or `"unknown"`.
+ *
+ * Read at build time and stamped into every page as
+ * `<meta name="build-commit">`, so a deployed artefact can be traced back to a
+ * commit without opening a dashboard. Every documented host names it
+ * differently — `CF_PAGES_COMMIT_SHA` on Cloudflare Pages, `GITHUB_SHA` in
+ * Actions, `COMMIT_REF` on Netlify, `VERCEL_GIT_COMMIT_SHA` on Vercel — so all
+ * four are read, and a build with none of them says `unknown` rather than
+ * guessing. Deliberately not a `PUBLIC_` variable: nothing in the browser needs
+ * to read it, only the head does.
+ */
+const buildCommitFromEnvironment = (
+  process.env.CF_PAGES_COMMIT_SHA ||
+  process.env.GITHUB_SHA ||
+  process.env.COMMIT_REF ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  ""
+).trim();
+
+export const buildCommit = buildCommitFromEnvironment
+  ? buildCommitFromEnvironment.slice(0, 7)
+  : "unknown";
+
 /** Canonical origin (no trailing slash). */
 export const siteUrl = clean(import.meta.env.PUBLIC_SITE_URL, "https://healthaali.in") || "https://healthaali.in";
 

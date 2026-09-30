@@ -597,7 +597,12 @@ public DNS, RDAP and HTTPS, and exits non-zero only on a real problem rather tha
 on items that are simply not done yet. Give it a read-only `CLOUDFLARE_API_TOKEN`
 and it reads the dashboard settings themselves as well — the Pages build
 configuration, the custom domains and the zone's records — since none of those
-leave a public trace to infer from. The same check runs unattended every six
+leave a public trace to infer from — including which revision is live: every page
+carries `<meta name="build-commit">`, taken at build time from the host's own
+environment variable (`CF_PAGES_COMMIT_SHA` on Pages, `GITHUB_SHA` in Actions,
+`COMMIT_REF` on Netlify, `VERCEL_GIT_COMMIT_SHA` on Vercel), so the deployed
+artefact can be traced to a commit without opening a dashboard. The same check
+runs unattended every six
 hours in
 [`launch-check.yml`](../.github/workflows/launch-check.yml), which installs
 nothing but Node, so a dependency problem can never masquerade as a deployment

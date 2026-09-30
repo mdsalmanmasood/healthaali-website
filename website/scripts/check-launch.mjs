@@ -33,6 +33,9 @@
  *                      site's HTML, not a parking page wearing its name
  *   5. Headers         the deployed response carries the CSP from `_headers`,
  *                      which is the only way to know the host is reading it
+ *   5b. Revision       the build says which commit it came from, and that
+ *                      commit is in this repository's history — a deployment
+ *                      serving something else entirely says so out loud
  *   6. Certificate     enough validity left that an unnoticed renewal failure
  *                      is caught weeks early, not by a browser warning
  *   7. Mail            MX records exist, so the published `info@` address is
@@ -54,8 +57,11 @@
  * on DNS pointing at the deployment, which is the entire point of it.
  */
 
+import { execFileSync } from "node:child_process";
 import dns from "node:dns/promises";
+import path from "node:path";
 import tls from "node:tls";
+import { fileURLToPath } from "node:url";
 
 /* ── arguments ────────────────────────────────────────────────────────────── */
 
@@ -67,6 +73,9 @@ const option = (name, fallback) => {
 
 const SITE = option("--site", process.env.PUBLIC_SITE_URL || "https://healthaali.in");
 const HOST = new URL(SITE).hostname;
+
+/** The repository root, for the one check that needs local git history. */
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /** The Pages project named in LAUNCH.md. `*.pages.dev` is the free hostname. */
 const PAGES_PROJECT = option("--pages-project", "healthaali");
@@ -275,6 +284,22 @@ async function checkParkingRecords() {
 /* ── 4–6. what the hostname actually serves ───────────────────────────────── */
 
 /**
+ * Run a read-only git command against the checkout, or return null when there
+ * is no history to read (an export, no git installed).
+ */
+function git(args) {
+  try {
+    return execFileSync("git", args, {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetched once and reused: whether the live site answers, what it answers with,
  * and the certificate behind it are three views of the same request.
  */
@@ -321,6 +346,97 @@ function checkSite(homepage) {
 
   ok("Live site", `200, canonical points at ${SITE}`);
   return true;
+}
+
+/**
+ * Which commit the deployment came from, from the build stamp in every page.
+ *
+ * Answering 200 proves only that *something* is serving. A stamp that is missing
+ * or says `unknown` means the artefact cannot be traced at all; a stamp that is
+ * not in this repository's history means the host is serving code this
+ * repository does not contain. Being merely behind HEAD is different: that is
+ * what a build in flight looks like, so it is reported as outstanding rather
+ * than broken.
+ */
+const BUILD_COMMIT = /<meta\s+name="build-commit"\s+content="([^"]*)"/i;
+
+function checkRevision(homepage) {
+  if (homepage.error || homepage.response.status !== 200) {
+    pending("Deployed revision", "cannot be read until the site answers");
+    return;
+  }
+
+  const declared = (homepage.body.match(BUILD_COMMIT)?.[1] || "").trim();
+
+  if (!declared) {
+    problem(
+      "Deployed revision",
+      "the served HTML carries no build-commit meta tag — whatever is answering " +
+        "was not built from this repository"
+    );
+    return;
+  }
+
+  if (declared === "unknown") {
+    problem(
+      "Deployed revision",
+      'the build stamped itself "unknown" — the host supplied none of ' +
+        "CF_PAGES_COMMIT_SHA, GITHUB_SHA, COMMIT_REF or VERCEL_GIT_COMMIT_SHA, " +
+        "so the artefact cannot be traced to a commit"
+    );
+    return;
+  }
+
+  const head = git(["rev-parse", "HEAD"]);
+  if (!head) {
+    ok("Deployed revision", `${declared} deployed; no local git history to compare with`);
+    return;
+  }
+
+  const headShort = head.slice(0, 7);
+
+  if (declared === headShort) {
+    ok("Deployed revision", `${declared} — matches the repository HEAD`);
+    return;
+  }
+
+  if (git(["cat-file", "-e", `${declared}^{commit}`]) === null) {
+    // A shallow checkout cannot tell "older commit" from "some other
+    // repository", and CI checkouts are shallow by default. Say so instead of
+    // guessing in the alarming direction.
+    if (git(["rev-parse", "--is-shallow-repository"]) === "true") {
+      pending(
+        "Deployed revision",
+        `${declared} is deployed and differs from HEAD (${headShort}); this ` +
+          `checkout is shallow, so the comparison is inconclusive — fetch full ` +
+          `history to confirm`
+      );
+      return;
+    }
+
+    problem(
+      "Deployed revision",
+      `the deployment declares ${declared}, which is not in this repository's ` +
+        `history (HEAD is ${headShort}) — the host is serving something else`
+    );
+    return;
+  }
+
+  if (git(["merge-base", "--is-ancestor", declared, "HEAD"]) === null) {
+    problem(
+      "Deployed revision",
+      `${declared} is deployed but HEAD (${headShort}) has diverged from it — ` +
+        `the deployment is not an earlier state of this branch`
+    );
+    return;
+  }
+
+  const behind = git(["rev-list", "--count", `${declared}..HEAD`]);
+  pending(
+    "Deployed revision",
+    `${declared} is deployed and HEAD is ${behind} commit(s) ahead (${headShort}) — ` +
+      `a build in flight, or deploys have stopped`
+  );
 }
 
 function checkHeaders(homepage) {
@@ -689,6 +805,7 @@ async function main() {
   await checkRegistrar();
   await checkParkingRecords();
   checkSite(homepage);
+  checkRevision(homepage);
   checkHeaders(homepage);
   await checkCertificate(homepage);
   await checkMail();

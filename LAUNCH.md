@@ -129,7 +129,7 @@ Every pull request also gets a preview deployment; only `main` is production.
 | `ci.yml` | push / PR to `main`, manual | install, typecheck, recipes, build, placeholders, links, a11y |
 | `sync-recipes.yml` | daily 03:00 UTC, manual | proposes the YouTube snapshot as a PR only when it really changed |
 | `uptime.yml` | every six hours at :17, manual | probes the live domain and its certificate |
-| `launch-check.yml` | every six hours at :47, manual | re-runs `check:launch`, so launch regressions are caught without anyone looking |
+| `launch-check.yml` | every six hours at :47, manual | re-runs `check:launch`, so launch regressions are caught without anyone looking; also asserts the deployed revision comes from this repository |
 
 `uptime.yml` fails until the domain serves the Pages project — that is the
 intended signal, not a broken workflow. `launch-check.yml` is the same idea one
@@ -207,3 +207,19 @@ a healthy deployment.
 The same check runs unattended as `launch-check.yml` every six hours. It reads
 the token from a repository secret of the same name when one exists, so a
 deployment problem is reported by a failed run rather than by a visitor.
+
+### Which revision is actually deployed
+
+Every page carries `<meta name="build-commit">`, filled at build time from the
+host's environment — `CF_PAGES_COMMIT_SHA` on Pages, `GITHUB_SHA` in Actions,
+`COMMIT_REF` on Netlify, `VERCEL_GIT_COMMIT_SHA` on Vercel — and `unknown` when
+the build was given none of them.
+
+`check:launch` compares that stamp against the repository's `HEAD`, and the three
+outcomes are deliberately different:
+
+| Stamp vs HEAD | Reported as | Because |
+| --- | --- | --- |
+| equal | ✓ | the deployment is this commit |
+| an ancestor | ○ outstanding | that is what a build in flight looks like |
+| not in this history, or missing/`unknown` | ✗ | the host is serving code this repository does not contain |
