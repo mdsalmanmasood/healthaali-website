@@ -589,6 +589,11 @@ disabled control that activates the moment the matching variable is set.
 
 Static output, so any host works. Config for all three is already in the repo.
 
+Everything in this section that lives in a dashboard rather than in the repository
+— the Pages build settings, its watch paths, the custom domains, and the zone's
+records — is written down with the values actually in use in
+[`LAUNCH.md`](../LAUNCH.md).
+
 ### Cloudflare Pages (recommended — free, no Node server needed)
 
 1. **Create the project** — *Workers & Pages* → *Create* → *Pages* → *Connect to
