@@ -75,8 +75,10 @@ Windows: **`preview.bat`** builds first, then serves `dist/`.
 | `npm run check:a11y` | axe-core WCAG A/AA audit of every built page, in light *and* dark |
 | `npm run check:placeholders` | Fail on any `[bracketed]` placeholder left in a built page |
 | `npm run check:recipes` | Validate the committed recipe snapshot, offline |
+| `npm run check:blog-links` | Fail when a post links to fewer than two other posts, or is an orphan |
+| `npm run check:blog-dates` | Fail when a post is dated before the video it embeds |
 | `npm run check:weight` | Fail when a built page exceeds its gzipped HTML/CSS/JS budget |
-| `npm run verify` | `check:recipes` + `build` + `check:placeholders` + `check:links` + `check:weight` + `check:a11y` — exactly what CI runs |
+| `npm run verify` | `check:recipes` + `check:blog-links` + `check:blog-dates` + `build` + `check:placeholders` + `check:links` + `check:weight` + `check:a11y` — exactly what CI runs |
 | `npm run assets` | Re-derive every image from the supplied brand kit |
 | `npm run blog:images` | Convert any blog cover artwork to WebP (quality 75) and wire it into the post |
 | `npm run blog:images -- --prompts` | Rewrite `src/assets/blog/PROMPTS.md` from the prompt manifest |
@@ -109,9 +111,11 @@ In that case just open the URL the console prints, or stop the other program.
 
 ## Quality gates
 
-Three checks run against the **built** site rather than the sources, because that
-is what a visitor receives. All are plain npm scripts, so CI and your terminal
-execute the same code.
+These run against the **built** site rather than the sources, because that is
+what a visitor receives — except the three that read the sources on purpose (the
+recipe snapshot, and the blog's internal links and dates), which say so where
+they are described. All of them are plain npm scripts, so CI and your terminal execute
+the same code.
 
 ### Link integrity — `npm run check:links`
 
@@ -136,6 +140,58 @@ Instagram must never turn a pull request red, so `--external` opts into live
 checks (two attempts, five at a time) and treats 401/403/405/429 as "reachable
 but restricted to bots" rather than broken. Run it by hand when you change a
 social link.
+
+### Blog internal links — `npm run check:blog-links`
+
+[`scripts/check-blog-links.mjs`](scripts/check-blog-links.mjs) reads the
+Markdown in `src/content/blog/` and holds two rules:
+
+- **Every published post links to at least two others.** Two is a floor, not a
+target — the posts here carry four or five each — but a floor is the part a gate
+can enforce.
+- **Every published post is linked from at least one other.** A post with no
+inbound links is reachable only from the index and its tags, which is what an
+orphan is.
+
+It prints the whole graph (out-links and in-links per post, weakest first) rather
+than the first failure, because the useful answer to "this one is short" is
+"here is where the links already are". `--min <n>` raises the floor, and `--dir`
+points it somewhere else.
+
+It reads the sources and not `dist/` on purpose. Whether a link *resolves* is the
+link checker's job on the built site; this catches a post that links to nothing
+and a cross-link to a slug that does not exist, both reported against the file
+that needs the edit. It is not a rule in `src/data/blog.ts` because that module
+runs during `astro dev` — a half-written draft should not be able to stop you
+running the dev server. Drafts are skipped here for the same reason.
+
+### Blog dates — `npm run check:blog-dates`
+
+[`scripts/check-blog-dates.mjs`](scripts/check-blog-dates.mjs) reads the same
+Markdown, the upload timestamps in [`src/data/recipes.json`](src/data/recipes.json),
+and holds one rule:
+
+- **No published post is dated before the newest video it embeds.** A post
+explains cooking that has already been filmed, so it cannot have explained a
+video that had not been uploaded yet. This is the floor half of
+[Dating a post](#dating-a-post), and the half a build would never notice on its
+own: a date is a valid date whatever it claims.
+
+It also fails on an embed whose id is not in the snapshot. Without a snapshot
+entry there is no upload date to compare against, so a single typo in a `data-yt`
+would quietly take the rule out of play for that post. The snapshot merges by
+video id and never drops an entry, so an id it does not know was never in the
+feed.
+
+It prints a table — every post, its date, the upload date of its newest embed
+and the gap between them — because the gap is the other half of the convention.
+The posts here run one or two days after their video; `--max-gap <days>` turns
+that habit into a failure when you want it, and stays off by default because a
+wider gap is an editorial choice rather than a mistake. `--dir` and `--recipes`
+point it at other files.
+
+Same reasoning as the link gate for living here rather than in
+`src/data/blog.ts`, and the same reason drafts are skipped.
 
 ### Accessibility — `npm run check:a11y`
 
@@ -436,6 +492,22 @@ are required; `updatedAt`, `tags`, `author`, `cover`, `coverAlt` and `draft` are
 `author` names an entry in [`src/data/authors.ts`](src/data/authors.ts) and defaults to
 the team byline; an unknown id fails the build with the list of known authors.
 
+### Dating a post
+
+A post is dated **1–2 days after the newest video it embeds**, using the upload timestamp in
+[`src/data/recipes.json`](src/data/recipes.json). The blog explains cooking that has already
+been filmed, so the date follows the video out rather than the other way round — and that
+gives the archive a hard floor: no post is dated before a video it shows, because a post
+cannot have explained a video that did not exist yet. `npm run check:blog-dates` enforces
+that floor — see [Blog dates](#blog-dates--npm-run-checkblog-dates) — while the size of the
+gap is printed there rather than gated.
+
+It is also why the posts run across the channel's own timeline (February to September 2026)
+instead of sitting on an evenly spaced ladder of recent dates, which is what a set of posts
+written in one sitting otherwise looks like. Where two posts embed the same newest video, the
+later one takes the following day so no two posts share a date. `updatedAt` is a different
+field and stays absent until a post has actually been revised.
+
 ### The file name is the URL
 
 There is no `slug:` override. An explicit `generateId` points the collection at the single
@@ -706,9 +778,13 @@ disclaimer on every page; a longer post would add words, not information.
 1. Write the Markdown in `src/content/blog/` — body headings start at `##`, and the file
    name is the URL.
 2. Embed any recipe video with a `<figure class="yt-embed">` block (above), or none at all.
-3. Add a cover: put the artwork in `asset/blog/<file-name>.png` and run
+3. Set `publishedAt` one or two days after the newest embedded video's upload date — see
+   [Dating a post](#dating-a-post) for why.
+4. Add a cover: put the artwork in `asset/blog/<file-name>.png` and run
    `npm run blog:images`.
-4. Run `npm run verify`. It type-checks, builds, and then checks placeholders, links, page
+5. Link it to at least two other posts — `npm run check:blog-links` prints the graph and
+   fails if the new post is short or is left as an orphan.
+6. Run `npm run verify`. It type-checks, builds, and then checks placeholders, links, page
    weight and accessibility against the built output — which is where a missing alt text, a
    broken internal link or an over-budget page shows up.
 

@@ -1,18 +1,24 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # HealThaali — continuous integration
 #
-# Eight gates, in the order a failure is cheapest to understand:
+# Ten gates, in the order a failure is cheapest to understand:
 #
 #   1. Install       `npm ci` from the committed lockfile
 #   2. Typecheck     `astro check` — TypeScript + template diagnostics
 #   3. Build         `astro build` → dist/
 #   4. Check recipes the committed YouTube snapshot is valid and every
 #                    recipe has its thumbnail on disk (offline; no network)
-#   5. Check placeholders
+#   5. Check blog links
+#                    every published post links to at least two others, and
+#                    none of them is an orphan (reads the Markdown, not dist/)
+#   6. Check blog dates
+#                    no post is dated before the newest video it embeds, and
+#                    every embedded id is one the recipe snapshot knows
+#   7. Check placeholders
 #                    no `[square-bracket]` scaffolding left in any built page
-#   6. Check links   internal link, anchor, sitemap and robots integrity
-#   7. Check weight  no built page may exceed its gzipped HTML/CSS/JS budget
-#   8. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
+#   8. Check links   internal link, anchor, sitemap and robots integrity
+#   9. Check weight  no built page may exceed its gzipped HTML/CSS/JS budget
+#  10. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
 #                    in both the light and the dark colour scheme
 #
 # Every step runs the same npm script a developer runs locally, so CI cannot
@@ -88,6 +94,18 @@ jobs:
       # reports which recipe is wrong instead of failing mid-build.
       - name: Check recipe data
         run: npm run check:recipes
+
+      # Also source-level and instant. It reads the Markdown rather than dist/,
+      # so a post that links nowhere is named by its own file, and the whole
+      # link graph is printed while the run is still cheap to interrupt.
+      - name: Check blog internal links
+        run: npm run check:blog-links
+
+      # Source-level too, and just as cheap. A post is dated to follow the video
+      # it explains, so a date earlier than that video's upload is a claim the
+      # page cannot support. Both files are named in the failure.
+      - name: Check blog dates
+        run: npm run check:blog-dates
 
       - name: Build the static site
         run: npm run build
