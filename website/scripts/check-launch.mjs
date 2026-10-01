@@ -113,14 +113,19 @@ const RDAP_HEADERS = {
 
 /* ── result plumbing ──────────────────────────────────────────────────────── */
 
-/** @type {{ label: string, state: "ok"|"pending"|"problem", detail: string }[]} */
+/**
+ * `extra` carries the one thing that does not fit on a single line: the tail of
+ * a build log. Every other verdict stays one sentence.
+ *
+ * @type {{ label: string, state: "ok"|"pending"|"problem", detail: string, extra?: string }[]}
+ */
 const results = [];
 
-const record = (state, label, detail) => results.push({ label, state, detail });
+const record = (state, label, detail, extra) => results.push({ label, state, detail, extra });
 
 const ok = (label, detail) => record("ok", label, detail);
-const pending = (label, detail) => record("pending", label, detail);
-const problem = (label, detail) => record("problem", label, detail);
+const pending = (label, detail, extra) => record("pending", label, detail, extra);
+const problem = (label, detail, extra) => record("problem", label, detail, extra);
 
 const SYMBOL = { ok: "✓", pending: "○", problem: "✗" };
 
@@ -534,9 +539,13 @@ async function checkMail() {
 
 /* ── 8. the Pages project itself ──────────────────────────────────────────── */
 
+/** Whether the outside probe of the project's hostname got an answer at all. */
+let pagesHostnameAnswers = false;
+
 async function checkPagesProject() {
   try {
     const response = await fetchWithTimeout(`https://${PAGES_HOST}/`, { redirect: "follow" });
+    pagesHostnameAnswers = true;
     ok(
       "Pages project",
       `${PAGES_HOST} answers HTTP ${response.status} — note that a project ` +
@@ -567,7 +576,15 @@ async function checkPagesProject() {
  * secret values cannot be read back from the API at all.
  */
 const CLOUDFLARE_TOKEN = (process.env.CLOUDFLARE_API_TOKEN || "").trim();
-const CLOUDFLARE_API = "https://api.cloudflare.com/client/v4";
+
+/**
+ * Overridable so the deep mode can be exercised against a stub server. The
+ * token still only ever travels to whatever host is named here, and nothing but
+ * a local test should ever set it.
+ */
+const CLOUDFLARE_API = (
+  process.env.CLOUDFLARE_API || "https://api.cloudflare.com/client/v4"
+).replace(/\/$/, "");
 
 /**
  * The API's `pages_domain.status` values that mean the hostname is not serving.
@@ -594,7 +611,10 @@ async function cloudflare(path) {
     const detail =
       (payload?.errors || []).map((error) => `${error.code} ${error.message}`).join("; ") ||
       `HTTP ${response.status}`;
-    throw new Error(detail);
+
+    // The status is what separates "no such project" (404) from "this token may
+    // not read it" (403) — two entirely different fixes.
+    throw Object.assign(new Error(detail), { status: response.status });
   }
 
   return payload.result;
@@ -714,10 +734,42 @@ async function checkCloudflare() {
   try {
     project = await cloudflare(`/accounts/${accountId}/pages/projects/${PAGES_PROJECT}`);
   } catch (error) {
-    pending(
-      "Pages project (API)",
-      `not readable (${error.message}) — the project most likely does not exist yet`
-    );
+    if (error.status === 404) {
+      // "It does not exist" and "it exists under another name" look identical
+      // from outside the account; listing what is there tells them apart, and
+      // the subdomain is the hostname that actually has to resolve.
+      let existing = [];
+      try {
+        const all = await cloudflare(`/accounts/${accountId}/pages/projects?per_page=100`);
+        existing = Array.isArray(all) ? all : [];
+      } catch {
+        existing = [];
+      }
+
+      if (existing.length === 0) {
+        pending(
+          "Pages project (API)",
+          `no Pages project named ${PAGES_PROJECT}, and this account has none at ` +
+            `all — the project has not been created yet (LAUNCH.md §3)`
+        );
+      } else {
+        problem(
+          "Pages project (API)",
+          `no Pages project named ${PAGES_PROJECT}; this account has ` +
+            existing
+              .map((item) => `${item.name} (${item.subdomain || "no subdomain"})`)
+              .join(", ") +
+            ` — either the project is named differently, or it lives in another ` +
+            `Cloudflare account than ${HOST}`
+        );
+      }
+    } else {
+      pending(
+        "Pages project (API)",
+        `not readable (${error.message}) — either the project does not exist ` +
+          `yet, or the token is missing Cloudflare Pages:Read`
+      );
+    }
   }
 
   if (project) {
@@ -741,12 +793,40 @@ async function checkCloudflare() {
     }
 
     const source = project.source?.config;
-    ok(
-      "Pages source",
-      source
-        ? `${source.owner}/${source.repo_name} on branch ${source.production_branch}`
-        : "no git source attached"
-    );
+    const subdomain = project.subdomain || PAGES_HOST;
+
+    if (!source) {
+      problem(
+        "Pages source",
+        "no git source attached — a project without one only ever receives content " +
+          "from a manual upload, so pushing to the repository builds nothing and " +
+          `${subdomain} never gets a DNS record`
+      );
+    } else {
+      const branches = repositoryBranches();
+      const expected = expectedProductionBranch(branches);
+      const configured = source.production_branch;
+      const label = `${source.owner}/${source.repo_name} on branch ${configured}`;
+
+      if (branches.length > 0 && !branches.includes(configured)) {
+        problem(
+          "Pages source",
+          `${label}, but this repository has no such branch ` +
+            `(${branches.slice(0, 6).join(", ")}${branches.length > 6 ? ", …" : ""}) — ` +
+            `pushes build previews only, so production never publishes and ` +
+            `${subdomain} stays unresolvable`
+        );
+      } else if (expected && configured !== expected) {
+        problem(
+          "Pages source",
+          `${label}, but the repository's default branch is "${expected}" — ` +
+            `pushing to ${expected} builds previews only, so nothing reaches ` +
+            `production and ${subdomain} never appears`
+        );
+      } else {
+        ok("Pages source", `${label}${expected ? " — the repository's default branch" : ""}`);
+      }
+    }
 
     const envVars = project.deployment_configs?.production?.env_vars || {};
     const names = Object.keys(envVars).sort();
@@ -793,6 +873,225 @@ async function checkCloudflare() {
         );
       }
     }
+
+    await checkPagesDeployments(accountId, project);
+  }
+}
+
+/* ── 10. what the project has actually deployed ───────────────────────────── */
+
+/**
+ * A Pages project is handed its `*.pages.dev` hostname by its first successful
+ * *production* deployment. Until one lands, Cloudflare publishes no record for
+ * the subdomain at all, which is why the symptom is NXDOMAIN rather than a 404,
+ * a blank page or a certificate warning. Reading the deployment list is what
+ * separates the four candidates that are indistinguishable from outside the
+ * account:
+ *
+ *   1. the project was never created
+ *   2. it exists and has never been built
+ *   3. every build has failed
+ *   4. the build is fine and only the hostname is missing
+ */
+
+/** `latest_stage.status` values that mean the build is still moving. */
+const DEPLOYMENT_IN_FLIGHT = ["idle", "active", "queued"];
+
+/** `latest_stage.status` values that mean it will never finish on its own. */
+const DEPLOYMENT_FAILED = ["failure", "canceled"];
+
+/** What a failed stage name means in practice. */
+const STAGE_MEANING = {
+  initialize: "the build environment never started",
+  clone_repo: "the repository could not be cloned — usually source access",
+  build: "the build command itself failed",
+  deploy: "the build succeeded but publishing did not",
+};
+
+/** Size of a build-log tail: enough to hold the error, not the whole log. */
+const LOG_TAIL_LINES = 40;
+const LOG_LINE_MAX = 300;
+
+/** Newest first, whatever order the API answers in. */
+const byNewest = (a, b) => String(b?.created_on || "").localeCompare(String(a?.created_on || ""));
+
+const shortCommit = (commit) => (commit || "").slice(0, 7) || "no commit";
+
+const readableTime = (iso) =>
+  iso ? `${String(iso).slice(0, 16).replace("T", " ")} UTC` : "at an unknown time";
+
+/** The log as plain lines, whatever shape the API answers with. */
+function logLines(result) {
+  if (!Array.isArray(result)) return [];
+
+  return result
+    .map((row) => (typeof row === "string" ? row : row?.line ?? row?.data ?? row?.message ?? ""))
+    .map((line) => String(line).trimEnd())
+    .filter((line) => line.length > 0)
+    .map((line) => (line.length > LOG_LINE_MAX ? `${line.slice(0, LOG_LINE_MAX)}…` : line));
+}
+
+/** The last lines of a deployment's build log, or the reason there are none. */
+async function fetchDeploymentLog(accountId, deployment) {
+  try {
+    const result = await cloudflare(
+      `/accounts/${accountId}/pages/projects/${PAGES_PROJECT}/deployments/${deployment.id}/history/logs`
+    );
+    const lines = logLines(result);
+    return lines.length > 0 ? lines.slice(-LOG_TAIL_LINES) : ["(the API returned no log lines)"];
+  } catch (error) {
+    return [`(the build log could not be read: ${error.message})`];
+  }
+}
+
+/**
+ * Which branch this repository publishes from. `origin/HEAD` answers that
+ * exactly when it is set; a checkout that lacks it still almost always means
+ * `main`, and the branch the checkout sits on is the last resort.
+ */
+function expectedProductionBranch(branches) {
+  const originHead = git(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"]);
+  if (originHead) return originHead.replace(/^origin\//, "");
+  if (branches.includes("main")) return "main";
+
+  const current = git(["rev-parse", "--abbrev-ref", "HEAD"]);
+  return current && current !== "HEAD" ? current : branches[0] || "";
+}
+
+/** The repository's branch names, remote-tracking first, minus the HEAD alias. */
+function repositoryBranches() {
+  const remote = (git(["for-each-ref", "--format=%(refname:short)", "refs/remotes/origin"]) || "")
+    .split("\n")
+    .map((name) => name.trim().replace(/^origin\//, ""))
+    .filter((name) => name && name !== "HEAD");
+
+  if (remote.length > 0) return remote;
+
+  return (git(["for-each-ref", "--format=%(refname:short)", "refs/heads"]) || "")
+    .split("\n")
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+async function checkPagesDeployments(accountId, project) {
+  const subdomain = project.subdomain || PAGES_HOST;
+
+  let deployments;
+  try {
+    const list = await cloudflare(
+      `/accounts/${accountId}/pages/projects/${PAGES_PROJECT}/deployments?per_page=10`
+    );
+    deployments = Array.isArray(list) ? list : [];
+  } catch (error) {
+    // Some API versions carry the newest deployment on the project itself; one
+    // row beats none when only the list endpoint is unavailable.
+    deployments = project.latest_deployment ? [project.latest_deployment] : [];
+
+    if (deployments.length === 0) {
+      problem("Pages deployments", `could not be listed (${error.message})`);
+      return;
+    }
+  }
+
+  if (deployments.length === 0) {
+    pending(
+      "Pages deployments",
+      `none — the project has never been built. A Pages project is handed its ` +
+        `*.pages.dev hostname by its first successful production deployment, and ` +
+        `until one lands ${subdomain} has no DNS record at all: NXDOMAIN from every ` +
+        `resolver, which is exactly what the probe above sees.`
+    );
+    return;
+  }
+
+  deployments.sort(byNewest);
+
+  const production = deployments.filter((deployment) => deployment.environment === "production");
+
+  if (production.length === 0) {
+    problem(
+      "Pages deployments",
+      `${deployments.length} deployment(s) and not one of them production (newest ` +
+        `${readableTime(deployments[0]?.created_on)}) — the project's production ` +
+        `branch has never been built, so nothing is ever published to ${subdomain}`
+    );
+    return;
+  }
+
+  const latest = production[0];
+  const status = latest.latest_stage?.status || "unknown";
+  const stage = latest.latest_stage?.name || "unknown stage";
+  const commit = latest.deployment_trigger?.metadata?.commit_hash;
+  const context = `newest production deployment ${shortCommit(commit)}, ${readableTime(
+    latest.created_on
+  )}`;
+  const dashboard = `https://dash.cloudflare.com/${accountId}/pages/view/${PAGES_PROJECT}/${latest.id}`;
+
+  if (DEPLOYMENT_FAILED.includes(status)) {
+    const meaning = STAGE_MEANING[stage] ? ` — ${STAGE_MEANING[stage]}` : "";
+    problem(
+      "Pages deployments",
+      `${context} failed at the "${stage}" stage${meaning}. The whole log is at ` +
+        `${dashboard}; the tail follows.`,
+      (await fetchDeploymentLog(accountId, latest)).join("\n")
+    );
+    return;
+  }
+
+  if (DEPLOYMENT_IN_FLIGHT.includes(status)) {
+    pending(
+      "Pages deployments",
+      `${context} is ${status} right now — a build in flight, not a failure. ` +
+        `Re-run this check in a few minutes. ${dashboard}`
+    );
+    return;
+  }
+
+  if (status !== "success") {
+    pending(
+      "Pages deployments",
+      `${context} reports status "${status}", which is neither finished nor ` +
+        `failed. Worth opening: ${dashboard}`
+    );
+    return;
+  }
+
+  if (latest.is_skipped) {
+    pending(
+      "Pages deployments",
+      `${context} was skipped, so nothing was published — a skipped build leaves ` +
+        `the previous deployment, or none at all, in place. ${dashboard}`
+    );
+    return;
+  }
+
+  const aliases = Array.isArray(latest.aliases) ? latest.aliases : [];
+  ok("Pages deployments", `${context} succeeded, serving ${aliases.join(", ") || subdomain}`);
+
+  // An API that reports a live deployment while DNS still answers NXDOMAIN is
+  // the one combination that indicts the hostname rather than the build.
+  const parsed = Date.parse(latest.created_on || "");
+  const ageMinutes = Number.isFinite(parsed) ? (Date.now() - parsed) / 60_000 : Infinity;
+
+  if (!pagesHostnameAnswers && (aliases.length === 0 || aliases.includes(PAGES_HOST))) {
+    const claim =
+      `the API reports a successful production deployment serving ` +
+      `${aliases.join(", ") || subdomain}, yet ${PAGES_HOST} does not resolve from here`;
+
+    if (ageMinutes > 15) {
+      problem(
+        "Pages hostname",
+        `${claim}. A hostname is provisioned within minutes of the first ` +
+          `successful deployment, so this disagreement is real rather than a wait ` +
+          `— check for a different project name, or a project in another account.`
+      );
+    } else {
+      pending(
+        "Pages hostname",
+        `${claim}. The deployment is only ${Math.max(1, Math.round(ageMinutes))} minute(s) ` +
+          `old — too fresh to judge; re-run shortly.`
+      );
+    }
   }
 }
 
@@ -818,9 +1117,13 @@ async function main() {
 
   console.log(`\nHealThaali launch state — ${SITE}\n`);
 
-  for (const { state, label, detail } of results) {
+  for (const { state, label, detail, extra } of results) {
     console.log(`  ${SYMBOL[state]} ${label}`);
     console.log(`      ${detail}`);
+    if (extra) {
+      for (const line of extra.split("\n")) console.log(`        ${line}`);
+      console.log("");
+    }
   }
 
   console.log(

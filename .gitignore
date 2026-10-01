@@ -2,14 +2,25 @@
 # HealThaali — repository root
 #
 # The Astro website lives in ./website and is the only thing this repository
-# tracks. Everything at this outer level is source material that must NOT be
-# committed: the raw brand asset drop (huge, contains its own node_modules) and
-# local tooling state.
+# tracks: 7.4 MB in total. Everything at this outer level is either source
+# material the site is *derived* from, or local tooling state.
+#
+# LAUNCH.md §4 lists every ignored path with its measured size and the reason.
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Outer source material / local tooling
+
+# 42 MB and 163 files, its own node_modules included, against a 7.4 MB
+# repository. It is the read-only input to `npm run assets`
+# (website/scripts/extract-assets.mjs), which derives the images the site serves
+# into website/src/assets/ — those are committed, because a host build needs
+# them and this folder is not there.
 /asset/
+
 /.freebuff/
+
+# 2,412 lines written for the build this site was: a working document, not
+# repository documentation. What outlives it is in website/README.md.
 /HealthAali_Astro_Website_Build_Guide.md
 
 # Lighthouse reports from a manual measurement of the deployed site
