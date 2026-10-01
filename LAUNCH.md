@@ -22,9 +22,10 @@ valid certificate.
 - [x] Pages project created from the repository
 - [x] `healthaali.in` and `www.healthaali.in` attached as custom domains
 - [x] First production deployment succeeded — `b0a782f`, the repository HEAD
-- [ ] Uptime workflow green — the site answers, and all four probes plus the
-      certificate pass when done by hand; the newest scheduled run (00:37 UTC on
-      1 October) predates the domain answering. The next lands at 06:17 UTC
+- [x] Uptime workflow green — `Uptime #4`, dispatched by hand against
+      `40f8b0c`, is the first run to pass: all four paths 200 in under a third of
+      a second, certificate 89 days out. The scheduled run before it failed only
+      because it predated the domain answering
 - [ ] `info@healthaali.in` can receive mail — no MX records exist yet
 
 `npm run check:launch` re-derives every line above from public DNS, RDAP and
