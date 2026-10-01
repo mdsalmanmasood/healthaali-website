@@ -80,6 +80,19 @@ const DIST = path.resolve(ROOT, option("--dist", "dist"));
 const CHROME_OVERRIDE = option("--chrome", process.env.CHROME_PATH ?? process.env.CHROME_BIN ?? "");
 const NAV_TIMEOUT = Number(option("--timeout", "30000"));
 
+/**
+ * How long Chrome has to appear, and how many times to ask.
+ *
+ * Puppeteer's own ceiling is 30 seconds, and a GitHub runner has already
+ * missed it once: the job died on `TimeoutError: Timed out after 30000 ms
+ * while waiting for the WS endpoint URL to appear in stdout!` without a single
+ * page having been audited, which reads as an accessibility regression and is
+ * not one. A second attempt, on its own profile and with the ceiling doubled,
+ * costs nothing when the first works.
+ */
+const LAUNCH_TIMEOUT = 60000;
+const LAUNCH_ATTEMPTS = 2;
+
 /** WCAG 2.0 / 2.1 / 2.2 level A and AA criteria (axe tags that exist). */
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
@@ -161,6 +174,43 @@ function findChrome() {
     ],
   }[process.platform] ?? [];
   return candidates.find((candidate) => candidate && existsSync(candidate)) ?? "";
+}
+
+/**
+ * Chrome, launched on its own throwaway profile, retrying once.
+ *
+ * Every profile this creates is pushed onto `profiles` and removed by the
+ * caller's teardown, including the one belonging to an attempt that failed:
+ * a browser that half-started can leave a lock behind, which is exactly what
+ * the retry must not inherit.
+ */
+async function launchChrome(chromePath, profiles) {
+  for (let attempt = 1; ; attempt += 1) {
+    const userDataDir = await mkdtemp(path.join(os.tmpdir(), "healthaali-a11y-"));
+    profiles.push(userDataDir);
+
+    try {
+      return await puppeteer.launch({
+        executablePath: chromePath,
+        userDataDir,
+        headless: true,
+        timeout: LAUNCH_TIMEOUT,
+        protocolTimeout: NAV_TIMEOUT + 15000,
+        args: [
+          "--no-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--hide-scrollbars",
+          // Pin the colour space, or wide-gamut displays can shift the colours
+          // axe measures and make contrast results machine-dependent.
+          "--force-color-profile=srgb",
+        ],
+      });
+    } catch (error) {
+      if (attempt >= LAUNCH_ATTEMPTS) throw error;
+      console.log(`  Chrome did not start (${error.message}) — trying once more\n`);
+    }
+  }
 }
 
 /** Minimal static file server: enough for a local audit, nothing more. */
@@ -255,29 +305,14 @@ async function main() {
   console.log("          (includes axe's experimental rules, e.g. label-content-name-mismatch)\n");
 
   const { server, port } = await serveDist(DIST);
-  let userDataDir = "";
+  /* Profiles are ours to remove, so teardown is ours to handle gracefully. */
+  const profiles = [];
   let browser;
   const findings = [];
   const reviews = [];
 
   try {
-    // Our own profile directory, so teardown is ours to handle gracefully.
-    userDataDir = await mkdtemp(path.join(os.tmpdir(), "healthaali-a11y-"));
-    browser = await puppeteer.launch({
-      executablePath: chromePath,
-      userDataDir,
-      headless: true,
-      protocolTimeout: NAV_TIMEOUT + 15000,
-      args: [
-        "--no-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--hide-scrollbars",
-        // Pin the colour space, or wide-gamut displays can shift the colours
-        // axe measures and make contrast results machine-dependent.
-        "--force-color-profile=srgb",
-      ],
-    });
+    browser = await launchChrome(chromePath, profiles);
 
     let audits = 0;
     for (const scheme of SCHEMES) {
@@ -438,10 +473,12 @@ async function main() {
         /* nothing left to do */
       }
     }
-    try {
-      if (userDataDir) await rm(userDataDir, { recursive: true, force: true, maxRetries: 5 });
-    } catch {
-      console.log(`  note: Chrome profile left at ${userDataDir} (still locked); it is safe to delete.`);
+    for (const profile of profiles) {
+      try {
+        await rm(profile, { recursive: true, force: true, maxRetries: 5 });
+      } catch {
+        console.log(`  note: Chrome profile left at ${profile} (still locked); it is safe to delete.`);
+      }
     }
     await new Promise((resolve) => server.close(resolve));
   }
