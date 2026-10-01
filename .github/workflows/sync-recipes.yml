@@ -252,9 +252,14 @@ jobs:
               --body-file "$RUNNER_TEMP/pull-request-body.md"
           fi
 
-      # Deliberately un-gated: on a day with news it reads the snapshot this run
-      # has just written, and on a quiet day it closes any reminder whose video
-      # a post now carries. Nothing is destructive here — it opens issues, closes
-      # the ones this workflow opened, and leaves anything else alone.
+      # Deliberately un-gated, in two senses. It does not need a new video: on a
+      # quiet day it closes any reminder whose video a post now carries. And it
+      # runs even when an earlier step failed, because nothing in it touches the
+      # network — it reads the snapshot and the posts in the checkout — and the
+      # first scheduled run of this workflow failed at the feed with a transient
+      # HTTP 404 (#1, 1 October), which is exactly the day a reminder should still
+      # be tidied up rather than skipped. Nothing here is destructive: it opens
+      # issues, closes the ones this workflow opened, and leaves the rest alone.
       - name: Open or close the editorial reminders
+        if: always()
         run: npm run reminders
