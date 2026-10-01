@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # HealThaali — continuous integration
 #
-# Eleven gates, in the order a failure is cheapest to understand:
+# Twelve gates, in the order a failure is cheapest to understand:
 #
 #   1. Install       `npm ci` from the committed lockfile
 #   2. Typecheck     `astro check` — TypeScript + template diagnostics
@@ -20,7 +20,11 @@
 #   9. Check weight  no built page may exceed its gzipped HTML/CSS/JS budget
 #  10. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
 #                    in both the light and the dark colour scheme
-#  11. Test launch   the deep mode of check:launch, against a stub Cloudflare
+#  11. Check SEO    one <h1> per page, unique titles and descriptions, a
+#                    canonical URL that agrees with the sitemap, parseable
+#                    JSON-LD whose questions and entries are actually visible,
+#                    and the three topic pages wired into the homepage
+#  12. Test launch   the deep mode of check:launch, against a stub Cloudflare
 #                    API. It is the one part of the launch tooling that no
 #                    other step here can reach: it needs a token, and CI has
 #                    no token, so without this it would never run again
@@ -133,6 +137,14 @@ jobs:
       # already installed on the runner; no browser is downloaded.
       - name: Check accessibility
         run: npm run check:a11y
+
+      # A crawler never reports a problem: a missing description or a second
+      # <h1> is recorded as something worse and the page is indexed anyway. This
+      # reads the built HTML and fails on the invariants a review cannot keep —
+      # including that every FAQPage question and every CollectionPage entry is
+      # text a visitor can find on the same page.
+      - name: Check SEO invariants
+        run: npm run check:seo
 
       # Independent of the build, and the only gate that touches the deep mode
       # of check:launch — which needs CLOUDFLARE_API_TOKEN and therefore never

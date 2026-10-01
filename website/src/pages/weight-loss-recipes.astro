@@ -1,0 +1,19 @@
+---
+/**
+ * Weight-loss cooking — `/weight-loss-recipes`.
+ *
+ * The most competitive of the three queries, and the one where overclaiming is
+ * easiest: a page promising a rate of loss would rank better and be a lie, so
+ * this one carries the same refusals the posts do — no plan, no promised rate,
+ * no medical advice — and keeps the recipes and the arithmetic visible instead.
+ */
+import TopicPage from "../layouts/TopicPage.astro";
+
+import { getPosts } from "../data/blog";
+import { dishesForTopic, postsForTopic, topics } from "../data/topics";
+
+const topic = topics.find((entry) => entry.slug === "weight-loss-recipes")!;
+const posts = await getPosts();
+---
+
+<TopicPage topic={topic} dishes={dishesForTopic(topic)} posts={postsForTopic(topic, posts)} />

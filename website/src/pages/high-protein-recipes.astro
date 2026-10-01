@@ -1,0 +1,19 @@
+---
+/**
+ * High-protein cooking — `/high-protein-recipes`.
+ *
+ * The dishes on this page are the ones whose own published titles say
+ * "high protein"; the posts are the ones tagged "High protein". Both are
+ * derived at build time, so the next video the channel publishes under that
+ * label appears here without anyone editing this file.
+ */
+import TopicPage from "../layouts/TopicPage.astro";
+
+import { getPosts } from "../data/blog";
+import { dishesForTopic, postsForTopic, topics } from "../data/topics";
+
+const topic = topics.find((entry) => entry.slug === "high-protein-recipes")!;
+const posts = await getPosts();
+---
+
+<TopicPage topic={topic} dishes={dishesForTopic(topic)} posts={postsForTopic(topic, posts)} />

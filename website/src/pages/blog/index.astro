@@ -18,6 +18,7 @@ import {
 } from "../../data/blog";
 import { authorsUsedBy, authorPath } from "../../data/authors";
 import { organizationId } from "../../data/schema";
+import { topicPath, topics } from "../../data/topics";
 import { site, siteUrl } from "../../data/site";
 import { breadcrumbSchema, type Crumb } from "../../lib/breadcrumbs";
 
@@ -109,6 +110,25 @@ const blogSchema = {
                 <div class="mt-xl">
                   <TopicRail tags={tags} />
                 </div>
+              )
+            }
+
+            {/*
+              The recipe side of the same subjects. A tag page answers "what
+              have you written about protein"; a topic page answers "show me the
+              high-protein dishes" — different pages, so each links to the other
+              rather than one trying to be both.
+            */}
+            {
+              topics.length > 0 && (
+                <nav class="author-nav mt-lg" aria-label="Recipe collections">
+                  <span class="author-nav__label">Recipes by topic</span>
+                  {topics.map((topic) => (
+                    <a class="chip chip--brand" href={topicPath(topic)}>
+                      {topic.label}
+                    </a>
+                  ))}
+                </nav>
               )
             }
 

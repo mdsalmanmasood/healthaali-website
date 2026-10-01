@@ -1,0 +1,19 @@
+---
+/**
+ * No-oil and less-oil cooking — `/no-oil-recipes`.
+ *
+ * One page rather than two: "no oil" and "less oil" are the same intent
+ * ("cook this with less fat"), and two thin pages chasing it would compete with
+ * each other for the same query instead of serving it. What the page cannot be
+ * is an oil-free claim for the whole kitchen, and the copy says so.
+ */
+import TopicPage from "../layouts/TopicPage.astro";
+
+import { getPosts } from "../data/blog";
+import { dishesForTopic, postsForTopic, topics } from "../data/topics";
+
+const topic = topics.find((entry) => entry.slug === "no-oil-recipes")!;
+const posts = await getPosts();
+---
+
+<TopicPage topic={topic} dishes={dishesForTopic(topic)} posts={postsForTopic(topic, posts)} />

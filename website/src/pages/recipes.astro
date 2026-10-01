@@ -16,6 +16,7 @@ import {
   recipesUpdatedAt,
 } from "../data/recipes";
 import { absoluteUrl, site, siteUrl } from "../data/site";
+import { topicRail } from "../data/topics";
 
 const social = (name: string) => site.socials.find((entry) => entry.name === name);
 
@@ -89,6 +90,34 @@ const videoList = hasRecipes
         so you can see the technique rather than take it on trust. Each dish also has its own page,
         with the description published alongside the video.
       </p>
+    </div>
+  </section>
+
+  {/*
+    The three topic pages, above the full list. Someone who arrives looking for
+    "no-oil recipes" or "high-protein recipes" should not have to scan every
+    dish to work out which ones those are; the topic page does the collecting and
+    says how it collects them.
+  */}
+  <section class="section--tight" aria-labelledby="recipes-topics-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Start with a way of cooking"
+        eyebrowIcon="bowl"
+        title="No-oil, high-protein, or weight-loss"
+        lead="Each page below collects the dishes whose own published titles carry that label, along with the writing that goes with them."
+        id="recipes-topics-title"
+      />
+
+      <div class="cluster mt-xl">
+        {
+          topicRail().map((entry) => (
+            <Button href={entry.href} variant="secondary" icon="bowl">
+              {entry.label}
+            </Button>
+          ))
+        }
+      </div>
     </div>
   </section>
 

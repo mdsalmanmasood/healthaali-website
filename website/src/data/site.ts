@@ -170,6 +170,23 @@ export const site = {
   contactEmail,
 } as const;
 
+/**
+ * Google Search Console verification token, or empty.
+ *
+ * The site is on Cloudflare Pages and its build has no secret of its own, so
+ * the token is read from a PUBLIC_ variable set in the dashboard (Pages →
+ * Settings → Variables and secrets → Production) and emitted as
+ * `<meta name="google-site-verification">` on every page. Unset, no tag is
+ * emitted at all rather than an empty one.
+ *
+ * Search Console also offers a DNS TXT record, which needs no deploy — on this
+ * domain, with the zone already in Cloudflare, that is the faster route and the
+ * tag is the one that survives a lost dashboard.
+ */
+const googleSiteVerification = (process.env.PUBLIC_GOOGLE_SITE_VERIFICATION || "").trim();
+export const hasSiteVerification = googleSiteVerification.length > 0;
+export { googleSiteVerification };
+
 /** True when a real destination exists (so the UI can render "Coming soon"). */
 export const hasWebApp = webAppUrl.length > 0;
 export const hasAndroidApp = androidUrl.length > 0;

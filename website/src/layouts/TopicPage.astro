@@ -1,0 +1,286 @@
+---
+/**
+ * One cooking topic, rendered.
+ *
+ * The three topic pages differ only in their data, so they share this layout
+ * rather than three near-identical files: a change to how a collection page is
+ * described to a crawler, or to how a grid is marked up, happens once.
+ *
+ * What a topic page is, in schema terms: a `CollectionPage` whose `mainEntity`
+ * is an `ItemList` of the dishes and posts on it. The dishes are `VideoObject`s
+ * built from fields the snapshot actually supplies — no duration, no rating, no
+ * view count, and no `Recipe` node, because this site deliberately publishes no
+ * ingredient table and no calorie count per dish (see `recipes/[id].astro` for
+ * why). A `Recipe` without ingredients and instructions would be markup
+ * claiming a recipe page that does not exist.
+ *
+ * The `FAQPage` is the one on the page, in the same words, in the same order.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import Button from "../components/Button.astro";
+import DownloadCTA from "../components/DownloadCTA.astro";
+import FAQ from "../components/FAQ.astro";
+import Icon from "../components/Icon.astro";
+import JsonLd from "../components/JsonLd.astro";
+import PostCard from "../components/PostCard.astro";
+import RecipeCard from "../components/RecipeCard.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+
+import { medicalDisclaimer } from "../data/features";
+import type { BlogPost } from "../data/blog";
+import { isEmbeddable, type Recipe } from "../data/recipes";
+import { websiteId } from "../data/schema";
+import { absoluteUrl, site } from "../data/site";
+import {
+  topicCollectionName,
+  topicPath,
+  topicId,
+  topics,
+  type CookingTopic,
+} from "../data/topics";
+import { breadcrumbSchema, type Crumb } from "../lib/breadcrumbs";
+import { youtubeEmbedUrl } from "../lib/youtube";
+
+interface Props {
+  topic: CookingTopic;
+  dishes: Recipe[];
+  posts: BlogPost[];
+}
+
+const { topic, dishes, posts } = Astro.props;
+
+const entryCount = dishes.length + posts.length;
+const url = absoluteUrl(topicPath(topic));
+
+/* The visible trail and the BreadcrumbList are both built from this array. */
+const crumbs: Crumb[] = [
+  { name: "Home", href: "/" },
+  { name: topic.label, href: topicPath(topic) },
+];
+const breadcrumbs = breadcrumbSchema(crumbs);
+
+/*
+  The entries themselves. A dish is referenced with the fields the feed gave us
+  and points at its own page on this site; a post is referenced by headline and
+  URL, with its BlogPosting markup left on the post where it belongs.
+*/
+const parts = [
+  ...dishes.map((dish) => ({
+    "@type": "VideoObject",
+    name: dish.title,
+    url: absoluteUrl(`/recipes/${dish.id}`),
+    ...(isEmbeddable(dish)
+      ? { embedUrl: youtubeEmbedUrl(dish.id), contentUrl: dish.url, uploadDate: dish.published }
+      : { contentUrl: dish.url }),
+    thumbnailUrl: absoluteUrl(dish.image.src),
+  })),
+  ...posts.map((post) => ({
+    "@type": "BlogPosting",
+    headline: post.title,
+    url: absoluteUrl(post.href),
+    datePublished: post.publishedAt.toISOString(),
+  })),
+];
+
+const collectionSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": topicId(topic),
+  name: topicCollectionName(topic),
+  url,
+  description: topic.description,
+  inLanguage: "en",
+  isPartOf: { "@id": websiteId },
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: entryCount,
+    itemListElement: parts.map((part, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: part,
+    })),
+  },
+};
+
+/* The questions and answers below, in the order they are rendered. */
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  url,
+  inLanguage: "en",
+  mainEntity: topic.faq.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
+  })),
+};
+
+/** The other two topics, so every hub links the rest of the set. */
+const siblings = topics.filter((entry) => entry.slug !== topic.slug);
+---
+
+<BaseLayout
+  title={topic.title}
+  description={topic.description}
+  canonical={topicPath(topic)}
+  imageAlt={`${site.name} recipes: ${topic.label.toLowerCase()}.`}
+>
+  <Fragment slot="head">
+    <JsonLd data={breadcrumbs} />
+    <JsonLd data={collectionSchema} />
+    <JsonLd data={faqSchema} />
+  </Fragment>
+
+  <section class="page-hero">
+    <div class="container container--narrow">
+      <Breadcrumbs crumbs={crumbs} />
+
+      <p class="eyebrow">
+        <span class="eyebrow__dot" aria-hidden="true"></span>
+        {topic.label}
+      </p>
+
+      <h1 class="page-hero__title">{topic.heading}</h1>
+      <p class="page-hero__lead">{topic.lead}</p>
+
+      {
+        /* Counts, not adjectives: "9 dishes and 6 posts" is checkable, and the
+           copy above says the dishes were collected by their own titles. */
+      }
+      <p class="post-meta">
+        <span>
+          {dishes.length} {dishes.length === 1 ? "dish" : "dishes"}
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>
+          {posts.length} {posts.length === 1 ? "post" : "posts"}
+        </span>
+      </p>
+    </div>
+  </section>
+
+  <section class="section--tight">
+    <div class="container container--narrow">
+      <div class="prose">
+        {topic.intro.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="topic-dishes-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow={`${dishes.length} ${dishes.length === 1 ? "dish" : "dishes"}`}
+        eyebrowIcon="bowl"
+        title="Every dish published with this label"
+        lead="Newest first. The play button starts the video here; the dish's name opens its own page, where the description published with it is."
+        id="topic-dishes-title"
+      />
+
+      <ul class="card-grid card-grid--3 mt-2xl list-reset" role="list">
+        {dishes.map((dish) => <RecipeCard recipe={dish} />)}
+      </ul>
+
+      <p class="mt-xl">
+        <a class="link-arrow" href="/recipes">
+          <Icon name="arrowRight" size={15} />
+          All recipes, and how they are collected
+        </a>
+      </p>
+    </div>
+  </section>
+
+  {
+    posts.length > 0 && (
+      <section class="section section--alt" aria-labelledby="topic-posts-title">
+        <div class="container">
+          <SectionHeading
+            eyebrow={`${posts.length} ${posts.length === 1 ? "post" : "posts"}`}
+            eyebrowIcon="list"
+            title="The writing behind the recipes"
+            lead="Longer pieces on the same subject, from the blog — the numbers, the technique and the parts that are easy to get wrong."
+            id="topic-posts-title"
+          />
+
+          <ul class="card-grid card-grid--3 mt-2xl list-reset" role="list">
+            {posts.map((post) => <PostCard post={post} />)}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section" aria-labelledby="topic-facts-title">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="The numbers"
+        eyebrowIcon="info"
+        title={topic.factsHeading}
+        id="topic-facts-title"
+      />
+
+      <ol class="steps mt-2xl list-reset">
+        {
+          topic.facts.map((fact, index) => (
+            <li class="step">
+              <span class="step__number" aria-hidden="true">
+                {index + 1}
+              </span>
+              <p class="step__text">{fact}</p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <p class="notice mt-xl">{topic.limits}</p>
+    </div>
+  </section>
+
+  <section class="section section--alt" aria-labelledby="topic-faq-title">
+    <div class="container container--narrow">
+      <SectionHeading
+        eyebrow="Questions"
+        eyebrowIcon="info"
+        title="Asked about this way of cooking"
+        id="topic-faq-title"
+      />
+
+      <div class="mt-2xl">
+        <FAQ items={topic.faq} />
+      </div>
+
+      <p class="notice mt-xl">{medicalDisclaimer}</p>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="topic-more-title">
+    <div class="container">
+      <SectionHeading
+        eyebrow="Keep cooking"
+        eyebrowIcon="utensils"
+        title="The other ways to cook this way"
+        lead="Each page is collected the same way: a rule over the titles the channel published, applied to every dish in the library."
+        id="topic-more-title"
+      />
+
+      <div class="cluster mt-2xl">
+        {
+          siblings.map((sibling) => (
+            <Button href={topicPath(sibling)} variant="secondary" icon="bowl">
+              {sibling.label}
+            </Button>
+          ))
+        }
+        <Button href="/blog" variant="secondary" icon="list">
+          All writing
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <DownloadCTA
+    title="Cook it, then log it"
+    text="The recipes are free to watch. The app is where a plate gets counted against your own targets, and where the plan adjusts if a week goes sideways."
+  />
+</BaseLayout>

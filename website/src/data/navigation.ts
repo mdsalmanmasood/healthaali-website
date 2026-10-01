@@ -64,6 +64,25 @@ export const footerNav: FooterGroup[] = [
     ],
   },
   {
+    /*
+      The three topic pages. They are listed here and not in the header: that
+      row is full at the 1024px breakpoint (see the note above), and these are
+      the pages someone arrives at from a search rather than browses to — so the
+      job here is to give them a way onward once they are on the site, and to
+      put a link to each one on every page of it.
+
+      The paths are written out rather than derived from `topics.ts` so this
+      stays a plain list of links, and a slug that moves without being moved
+      here is caught by `npm run check:links` against the built site.
+    */
+    title: "Cook this way",
+    links: [
+      { label: "No-oil recipes", href: "/no-oil-recipes" },
+      { label: "High-protein recipes", href: "/high-protein-recipes" },
+      { label: "Weight-loss recipes", href: "/weight-loss-recipes" },
+    ],
+  },
+  {
     title: "Legal",
     links: [
       { label: "Privacy Policy", href: "/privacy" },

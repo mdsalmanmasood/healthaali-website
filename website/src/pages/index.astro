@@ -17,6 +17,7 @@ import { hasRecipes, latestRecipes, recipes } from "../data/recipes";
 import { cardScreens, phoneScreens } from "../data/screenshots";
 import { hasAndroidApp, site, siteUrl } from "../data/site";
 import { testimonials } from "../data/testimonials";
+import { topicRail } from "../data/topics";
 
 const promises = [
   { icon: "droplet", label: "Zero-oil recipes" },
@@ -44,6 +45,24 @@ const steps = [
   },
 ];
 
+/*
+  The FAQ that is rendered further down this page, in the same words and the
+  same order. It was visible without being marked up, which meant the one place
+  on the site with answers to the questions people actually type was invisible to
+  a crawler as a FAQ.
+*/
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  url: `${siteUrl}/`,
+  inLanguage: "en",
+  mainEntity: faq.map((item) => ({
+    "@type": "Question",
+    name: item.question,
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
+  })),
+};
+
 const softwareApplication = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -62,6 +81,7 @@ const softwareApplication = {
 >
   <Fragment slot="head">
     <JsonLd data={softwareApplication} />
+    <JsonLd data={faqSchema} />
   </Fragment>
 
   <!-- ================= Hero ================= -->
@@ -383,10 +403,24 @@ const softwareApplication = {
             ))}
           </ul>
 
+          {/*
+            The topic pages, from the homepage the crawler sees first. The
+            anchor text is the query each page answers — "no-oil recipes",
+            "high-protein recipes", "weight-loss recipes" — which is what makes
+            the link useful to a reader and legible to a search engine, rather
+            than "read more".
+          */}
           <div class="cluster mt-2xl" style="justify-content: center">
             <Button href="/recipes" icon="bowl" iconPosition="start">
               All {recipes.length} recipes
             </Button>
+            {
+              topicRail().map((entry) => (
+                <Button href={entry.href} variant="secondary" icon="bowl">
+                  {entry.label}
+                </Button>
+              ))
+            }
           </div>
         </div>
       </section>

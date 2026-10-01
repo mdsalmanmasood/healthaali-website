@@ -23,6 +23,7 @@ import {
   type Recipe,
 } from "../../data/recipes";
 import { organizationId } from "../../data/schema";
+import { topicPath, topicsForRecipe } from "../../data/topics";
 import { absoluteUrl, site } from "../../data/site";
 import { breadcrumbSchema, type Crumb } from "../../lib/breadcrumbs";
 import { youtubeEmbedUrl } from "../../lib/youtube";
@@ -53,6 +54,14 @@ const paragraphs = descriptionParagraphs(recipe);
 const embeddable = isEmbeddable(recipe);
 const related = neighbouringRecipes(recipe, 3);
 
+/*
+  The topic pages this dish belongs to. Membership is decided by the video's own
+  published title (see src/data/topics.ts) — so a dish that says "zero oil" is
+  linked from the no-oil collection, and one whose title says nothing is linked
+  from nowhere rather than from a guess.
+*/
+const dishTopics = topicsForRecipe(recipe);
+
 /* The visible trail and the BreadcrumbList are both built from this array. */
 const crumbs: Crumb[] = [
   { name: "Home", href: "/" },
@@ -75,7 +84,17 @@ const clamp = (text: string, max = 155): string => {
   return `${lastSpace > 60 ? cut.slice(0, lastSpace) : cut}…`;
 };
 
-const metaDescription = clamp(paragraphs[0] ?? recipe.summary ?? recipe.title);
+/*
+  A Short's teaser is often one line and no more — "🔥 NO OIL Pepper Soya
+  Chicken 🍗🌶️" is 35 characters — which makes for a snippet with nothing in
+  it. So when the publisher's own words come to less than a full sentence, one
+  factual sentence that is true of every page here is appended rather than
+  padding the description with adjectives nobody wrote. Nothing is invented
+  about the dish; the extra words describe the page.
+*/
+const own = clamp(paragraphs[0] ?? recipe.summary ?? recipe.title, 120);
+const metaDescription =
+  own.length >= 100 ? own : clamp(`${own} Filmed on camera for ${site.name}.`);
 
 /**
  * The video, described from the snapshot.
@@ -206,6 +225,19 @@ const videoSchema = embeddable
           <a href="/features">the features page</a>.
         </p>
       </div>
+
+      {
+        dishTopics.length > 0 && (
+          <nav class="author-nav mt-xl" aria-label="Cooking topics for this dish">
+            <span class="author-nav__label">Cook more like this</span>
+            {dishTopics.map((topic) => (
+              <a class="chip chip--brand" href={topicPath(topic)}>
+                {topic.label}
+              </a>
+            ))}
+          </nav>
+        )
+      }
 
       <p class="notice mt-xl">{medicalDisclaimer}</p>
 

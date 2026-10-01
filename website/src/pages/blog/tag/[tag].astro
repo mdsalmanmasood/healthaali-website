@@ -17,6 +17,7 @@ import TopicRail from "../../../components/TopicRail.astro";
 
 import { blogId, blogPath, collectTags, getPosts, type BlogTag } from "../../../data/blog";
 import { site, siteUrl } from "../../../data/site";
+import { topicForTag, topicPath } from "../../../data/topics";
 import { breadcrumbSchema, type Crumb } from "../../../lib/breadcrumbs";
 
 export async function getStaticPaths() {
@@ -36,6 +37,13 @@ interface Props {
 }
 
 const { tag, tags } = Astro.props;
+
+/*
+  Where this tag has a recipe collection behind it, the two pages get linked:
+  the tag page is what has been written, the topic page is what has been cooked.
+  A tag with no collection ("Fibre", "Food labels") simply has no such link.
+*/
+const recipeCollection = topicForTag(tag.name);
 
 const url = `${siteUrl}${tag.href}`;
 const count = tag.posts.length;
@@ -92,6 +100,16 @@ const tagSchema = {
       <div class="mt-2xl">
         <TopicRail tags={tags} current={tag.slug} />
       </div>
+
+      {
+        recipeCollection && (
+          <div class="page-hero__actions">
+            <Button href={topicPath(recipeCollection)} variant="secondary" icon="bowl">
+              {recipeCollection.label} — the dishes
+            </Button>
+          </div>
+        )
+      }
     </div>
   </section>
 

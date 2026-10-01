@@ -27,6 +27,10 @@ valid certificate.
       a second, certificate 89 days out. The scheduled run before it failed only
       because it predated the domain answering
 - [ ] `info@healthaali.in` can receive mail — no MX records exist yet
+- [ ] Google Search Console: the property verified and `sitemap-index.xml`
+      submitted — see §7. Nothing about the site's ranking can be measured until
+      this exists, because this is the only place the queries it is found for
+      are reported
 
 `npm run check:launch` re-derives every line above from public DNS, RDAP and
 HTTPS. It marks items that are merely not done yet with `○` and exits non-zero
@@ -129,6 +133,7 @@ honest "coming soon" state, which is what CI verifies:
 | `PUBLIC_CONTACT_EMAIL` | shown on `/contact` and in the footer; blank keeps `info@healthaali.in` |
 | `PUBLIC_CONTACT_ENDPOINT` | enables the contact form; until then the CSP omits `form-action` on purpose |
 | `PUBLIC_ANALYTICS_ID` | Cloudflare Web Analytics token; empty means no analytics at all |
+| `PUBLIC_GOOGLE_SITE_VERIFICATION` | Search Console ownership token, emitted as `<meta name="google-site-verification">`; unset emits no tag at all — see §7 |
 
 Every pull request also gets a preview deployment; only `main` is production.
 
@@ -161,7 +166,7 @@ given a read-only token, and prints the tail of a failed build's log (§5).
 
 | Workflow | Trigger | What it gates |
 | --- | --- | --- |
-| `ci.yml` | push / PR to `main`, manual | install, typecheck, recipes, build, placeholders, links, page weight, a11y |
+| `ci.yml` | push / PR to `main`, manual | install, typecheck, recipes, blog links and dates, build, placeholders, links, page weight, SEO invariants, a11y, the launch check's deep-mode tests |
 | `sync-recipes.yml` | daily 03:00 UTC, manual | proposes the YouTube snapshot as a PR only when it really changed |
 | `uptime.yml` | every six hours at :17, manual | probes the live domain and its certificate |
 | `launch-check.yml` | every six hours at :47, manual | re-runs `check:launch`, so launch regressions are caught without anyone looking; also asserts the deployed revision comes from this repository |
@@ -228,7 +233,7 @@ build reads it, it is committed; if only a person reads it, it is not.
 
 **The test that keeps the list honest:** a fresh clone has to build. `git archive
 HEAD` — byte-for-byte what a host clones — installs with `npm ci` and builds with
-`npm run build`, exit 0, 49 pages. Nothing in the table is needed for that, which
+`npm run build`, exit 0, 52 pages. Nothing in the table is needed for that, which
 is exactly why the Pages build (§3) works from the repository alone.
 
 Two cautions, because both are one command from going wrong:
@@ -374,3 +379,81 @@ Read the four scores and the three timings (LCP, TBT, CLS) out of each report an
 replace the table in `website/README.md`, including its caveat sentence, which
 should then describe the real edge rather than a local server. Record the date the
 measurement was taken: a performance number without one is a rumour.
+
+## 7. Search — the pages built to be found, and what is still missing
+
+The site's earlier pages were written for people who already know the brand (a
+features page, an about page). Three pages now exist for people who do not:
+`/no-oil-recipes`, `/high-protein-recipes` and `/weight-loss-recipes` — one per
+way of cooking somebody types into a search box.
+
+| Page | The query it answers | Its entries come from |
+| --- | --- | --- |
+| `/no-oil-recipes` | no-oil recipes, zero-oil cooking, cooking with less oil | dishes whose own published title says "no oil" or "zero oil", plus the post tagged *Zero oil* |
+| `/high-protein-recipes` | high-protein recipes, protein-rich Indian food | dishes whose title says "high protein", plus the six posts tagged *High protein* |
+| `/weight-loss-recipes` | weight-loss recipes, diet recipes | dishes whose title says "weight loss" or "lose weight", plus the four posts tagged *Weight loss* |
+
+**Membership is derived, not curated, and that is the point.** `recipes.json` is
+regenerated from the channel's feed by the daily sync, so a hand-written list of
+video ids would be stale within a week. Instead each page applies one rule to the
+titles the channel published, at build time:
+
+- a dish joins by its **title**, never its description — descriptions are mostly
+  hashtags, and matching those would eventually file a dessert under weight loss;
+- a post joins by its frontmatter tag, so the writing side stays in one place;
+- a topic that matches **nothing** fails the build (`src/data/topics.ts`) rather
+  than publishing an empty landing page.
+
+Each page works the same way: the dishes, the posts on the same subject, the
+numbers the posts already publish, and answers to the questions those posts are
+about. The copy refuses what the posts refuse — that oil is bad for you, that a
+rate of loss can be promised — because a landing page is the easiest place on a
+site to overclaim.
+
+Wired in: both directions between a topic page and its blog tag, a rail on
+`/recipes`, buttons on the homepage, chips on a dish's own page when its title
+puts it in a collection, and a "Cook this way" footer group sitewide.
+
+### What is verified automatically
+
+`npm run check:seo` (gate 11 of `ci.yml`, and part of `npm run verify`) reads the
+built HTML and fails on the invariants a review does not keep:
+
+- one `<h1>` per page, a unique `<title>` and meta description, a canonical URL
+  that agrees with the sitemap, and JSON-LD that parses;
+- **mark-up that matches the page**: every `FAQPage` question and every
+  `CollectionPage` entry must be text a visitor can find on that same page —
+  schema describing content that is not there is the one thing Google treats as
+  spam rather than as a mistake;
+- the three topic pages linked from the homepage, each with a `CollectionPage`,
+  an `FAQPage` and a `BreadcrumbList`, and each claiming at least one dish and
+  one post;
+- the sitemap and the build agreeing in both directions: every page built is
+  listed, and every URL listed exists.
+
+It also **reports** (without failing) the 17 pages whose `<title>` is longer than
+70 characters, which is roughly where a search result cuts it. Most are the
+videos' own titles, kept verbatim because they are the channel's words — the same
+reason the dish pages carry no invented `Recipe` markup: there is no ingredient
+table and no per-dish calorie count on this site, so claiming a recipe page in
+structured data would describe something that does not exist.
+
+### What is not done, and cannot be done from here
+
+Search Console is the one step with no CLI path, because it authenticates as the
+site owner:
+
+1. **Verify the property.** Either a DNS `TXT` record on `healthaali.in` in the
+   Cloudflare dashboard, or an HTML tag: set `PUBLIC_GOOGLE_SITE_VERIFICATION` in
+   the Pages project's environment variables (§3) and redeploy — it is emitted as
+   `<meta name="google-site-verification">` on every page, and omitted entirely
+   when unset. Clearing it later does not unverify the property.
+2. **Submit `https://healthaali.in/sitemap-index.xml`** under *Sitemaps*, then
+   request indexing for the three topic pages under *URL inspection*.
+
+Two honest limits on all of this. **Nothing here is a ranking**: the pages,
+`FAQPage`/`CollectionPage` markup, canonicals and sitemap make the site legible
+and eligible, and the rest is content depth over time and links from elsewhere —
+neither of which a change to this repository can create. And **the recipes are not
+all low-oil or high-protein dishes**; each page states the rule that matched and
+lists what it matched, rather than implying the whole library belongs to it.

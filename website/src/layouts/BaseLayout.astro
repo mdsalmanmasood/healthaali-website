@@ -4,7 +4,15 @@ import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import JsonLd from "../components/JsonLd.astro";
 import { siteSchema } from "../data/schema";
-import { absoluteUrl, analyticsId, buildCommit, site, siteUrl } from "../data/site";
+import {
+  absoluteUrl,
+  analyticsId,
+  buildCommit,
+  googleSiteVerification,
+  hasSiteVerification,
+  site,
+  siteUrl,
+} from "../data/site";
 
 import "../styles/tokens.css";
 import "../styles/global.css";
@@ -56,6 +64,22 @@ const {
   bodyClass = "",
 } = Astro.props;
 
+/**
+ * A canonical URL in the one form this site publishes, with the trailing slash.
+ *
+ * The build emits a directory per page (`dist/blog/foo/index.html`), the sitemap
+ * lists those directories with their slash, and Cloudflare serves both spellings
+ * — so a canonical without it would name a URL that is a second address for the
+ * same page, which is the one thing a canonical exists to settle. Pages whose
+ * route ends in `index` already arrive with the slash; the ones that do not are
+ * the dynamic routes, and this is what makes the two agree.
+ */
+const withTrailingSlash = (url: string): string => {
+  const parsed = new URL(url);
+  if (!parsed.pathname.endsWith("/")) parsed.pathname = `${parsed.pathname}/`;
+  return parsed.href;
+};
+
 const pageTitle = title.includes(site.name) ? title : `${title} | ${site.name}`;
 // A noindex page has no canonical URL to claim. 404.astro is the only such page,
 // and it is served for *any* unknown path, so Astro's route pathname (`/404/`)
@@ -63,9 +87,7 @@ const pageTitle = title.includes(site.name) ? title : `${title} | ${site.name}`;
 // invented URL in the <head>, so both tags are omitted instead.
 const canonicalUrl = noindex
   ? undefined
-  : canonical
-    ? absoluteUrl(canonical)
-    : new URL(Astro.url.pathname, siteUrl).href;
+  : withTrailingSlash(canonical ? absoluteUrl(canonical) : new URL(Astro.url.pathname, siteUrl).href);
 const ogImage = /^https?:\/\//.test(image) ? image : absoluteUrl(image);
 ---
 
@@ -98,6 +120,17 @@ const ogImage = /^https?:\/\//.test(image) ? image : absoluteUrl(image);
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
     {imageAlt ? <meta name="twitter:image:alt" content={imageAlt} /> : null}
+
+    {
+      /*
+        Search Console ownership. Emitted only when the token is configured, so
+        an unverified deploy carries no empty tag claiming a property it does not
+        own — see `googleSiteVerification` in src/data/site.ts.
+      */
+      hasSiteVerification ? (
+        <meta name="google-site-verification" content={googleSiteVerification} />
+      ) : null
+    }
 
     <!-- Icons, manifest, theme colour -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
