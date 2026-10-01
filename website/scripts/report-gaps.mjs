@@ -71,7 +71,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { embedsByVideo, findGaps, readPosts } from "./lib/editorial-gaps.mjs";
+import { embedsByVideo, findGaps, readPosts, readSnapshot } from "./lib/editorial-gaps.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, "..");
@@ -83,9 +83,6 @@ const option = (name, fallback) => {
   const i = argv.indexOf(name);
   return i !== -1 && argv[i + 1] ? argv[i + 1] : fallback;
 };
-
-const REPO = path.resolve(ROOT, "..");
-const relativeTo = (file) => path.relative(REPO, file).split(path.sep).join("/");
 
 const RECIPES_FILE = path.resolve(ROOT, option("--recipes", path.join("src", "data", "recipes.json")));
 const POSTS_DIR = path.resolve(ROOT, option("--posts", path.join("src", "content", "blog")));
@@ -105,24 +102,11 @@ const fail = (message) => {
 /* ── the snapshot ─────────────────────────────────────────────────────────── */
 
 async function readRecipes() {
-  if (!existsSync(RECIPES_FILE)) {
-    fail(
-      `No recipe snapshot at ${relativeTo(RECIPES_FILE)}.\n` +
-        "  Run `npm run recipes` to build one from the channel's feed.",
-    );
+  try {
+    return await readSnapshot(RECIPES_FILE, { root: ROOT });
+  } catch (error) {
+    fail(error.message);
   }
-
-  const snapshot = JSON.parse(await readFile(RECIPES_FILE, "utf8"));
-  const recipes = Array.isArray(snapshot) ? snapshot : snapshot.recipes;
-
-  if (!Array.isArray(recipes) || recipes.length === 0) {
-    fail(
-      `${relativeTo(RECIPES_FILE)} holds no recipes.\n` +
-        "  An empty snapshot would make every phrase below a gap for no reason.",
-    );
-  }
-
-  return { recipes, updatedAt: snapshot.updatedAt ?? "" };
 }
 
 /* ── hubs, read from the build ────────────────────────────────────────────── */

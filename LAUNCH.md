@@ -501,6 +501,16 @@ somebody to remember the report. Both go through the same rules, in
 same video; and like the report it is a note rather than a failure, because a new
 video with nothing written about it is the normal state of a new video.
 
+A pull request gets merged, which is a poor place for a reminder, so the same job
+also keeps the finding in the issue tracker: one labelled issue per video no post
+carries, with the phrases that need answering in the body, closed again with a
+comment naming the post once one is written. That step runs on every scheduled
+run rather than only the ones with news, because closing is the half that needs no
+news — the writing lands in an ordinary push and the next run tidies up. The
+command is `npm run reminders`, and it is safe to run by hand: `--dry-run` prints
+the plan, `--issues-json` plans offline against a captured issue list, and an open
+issue that names no video in the snapshot is reported rather than closed.
+
 ### What is not done, and cannot be done from here
 
 Search Console is the one step with no CLI path, because it authenticates as the

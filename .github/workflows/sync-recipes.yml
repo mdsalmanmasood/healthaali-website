@@ -44,6 +44,13 @@
 # report says the check was skipped, so silence is never mistaken for "nothing is
 # missing".
 #
+# And a pull request gets merged. So the last step of this job keeps the same
+# finding in the issue tracker instead: one labelled issue per video no post
+# carries, closed again by a later run once a post does. That runs on every
+# scheduled run, not only the ones with news, because "closed again" is the half
+# that needs no news — the writing lands in an ordinary push, and the next 03:00
+# run notices and tidies up. See `website/scripts/editorial-reminders.mjs`.
+#
 # Why it verifies the change itself
 # ---------------------------------
 # GitHub suppresses workflow runs for events caused by the repository's
@@ -87,10 +94,12 @@ concurrency:
   cancel-in-progress: false
 
 # Pushing a branch needs contents: write; opening the pull request needs
-# pull-requests: write. Everything else stays read-only.
+# pull-requests: write; the editorial reminders open, comment on and close
+# issues, and create their own label. Everything else stays read-only.
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 defaults:
   run:
@@ -242,3 +251,10 @@ jobs:
               --title "$TITLE" \
               --body-file "$RUNNER_TEMP/pull-request-body.md"
           fi
+
+      # Deliberately un-gated: on a day with news it reads the snapshot this run
+      # has just written, and on a quiet day it closes any reminder whose video
+      # a post now carries. Nothing is destructive here — it opens issues, closes
+      # the ones this workflow opened, and leaves anything else alone.
+      - name: Open or close the editorial reminders
+        run: npm run reminders

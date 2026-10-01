@@ -177,6 +177,43 @@ export async function readPosts(dir, { root = process.cwd() } = {}) {
   return posts;
 }
 
+/* ── the snapshot ─────────────────────────────────────────────────────────── */
+
+/**
+ * The recipe snapshot, or the message a caller should print when it is not
+ * usable.
+ *
+ * Throws rather than exiting: a snapshot that is missing or empty would make
+ * every phrase in the library read as a gap, which is a broken input rather
+ * than a finding, and each caller says so in its own voice.
+ *
+ * The recipes are `snapshot.recipes` — the top level of the file is an object —
+ * but a bare array is accepted, because that is the shape an older snapshot and
+ * a hand-written one can have.
+ */
+export async function readSnapshot(file, { root = process.cwd() } = {}) {
+  const relative = path.relative(root, file).split(path.sep).join("/") || file;
+
+  if (!existsSync(file)) {
+    throw new Error(
+      `No recipe snapshot at ${relative}.\n` +
+        "  Run `npm run recipes` to build one from the channel's feed.",
+    );
+  }
+
+  const snapshot = JSON.parse(await readFile(file, "utf8"));
+  const recipes = Array.isArray(snapshot) ? snapshot : snapshot.recipes;
+
+  if (!Array.isArray(recipes) || recipes.length === 0) {
+    throw new Error(
+      `${relative} holds no recipes.\n` +
+        "  An empty snapshot would make every phrase below a gap for no reason.",
+    );
+  }
+
+  return { recipes, updatedAt: snapshot.updatedAt ?? "" };
+}
+
 /* ── phrases ──────────────────────────────────────────────────────────────── */
 
 /**

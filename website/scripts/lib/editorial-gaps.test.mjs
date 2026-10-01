@@ -36,6 +36,7 @@ import {
   postFromMarkdown,
   proseOf,
   readPosts,
+  readSnapshot,
   wordsOf,
 } from "./editorial-gaps.mjs";
 
@@ -235,6 +236,51 @@ describe("embedsByVideo and gapsFor", () => {
 
     assert.deepEqual(gapsFor(gaps, ["new"]).map((gap) => gap.phrase), ["banana leaf fry"]);
     assert.deepEqual(gapsFor(gaps, ["nothing"]), []);
+  });
+});
+
+/* ── reading the snapshot ─────────────────────────────────────────────────── */
+
+describe("readSnapshot", () => {
+  let dir;
+
+  before(async () => {
+    dir = await mkdtemp(path.join(os.tmpdir(), "editorial-gaps-snapshot-"));
+    await writeFile(
+      path.join(dir, "recipes.json"),
+      JSON.stringify({ schemaVersion: 1, updatedAt: "2026-01-01T00:00:00.000Z", recipes: [video("abcdefghijk", "One")] }),
+    );
+    await writeFile(path.join(dir, "bare.json"), JSON.stringify([video("abcdefghijk", "One")]));
+    await writeFile(path.join(dir, "empty.json"), JSON.stringify({ schemaVersion: 1, recipes: [] }));
+  });
+
+  after(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("reads the recipes out of the object the sync writes", async () => {
+    const snapshot = await readSnapshot(path.join(dir, "recipes.json"));
+    assert.deepEqual(snapshot.recipes.map((recipe) => recipe.id), ["abcdefghijk"]);
+    assert.equal(snapshot.updatedAt, "2026-01-01T00:00:00.000Z");
+  });
+
+  it("accepts a bare array, which is the shape an older or hand-written file has", async () => {
+    const snapshot = await readSnapshot(path.join(dir, "bare.json"));
+    assert.deepEqual(snapshot.recipes.map((recipe) => recipe.id), ["abcdefghijk"]);
+  });
+
+  it("refuses a snapshot that is missing, because an empty library is not a finding", async () => {
+    await assert.rejects(
+      () => readSnapshot(path.join(dir, "nope.json")),
+      /No recipe snapshot at .*nope\.json\.\n  Run `npm run recipes`/,
+    );
+  });
+
+  it("refuses a snapshot with no recipes in it", async () => {
+    await assert.rejects(
+      () => readSnapshot(path.join(dir, "empty.json")),
+      /holds no recipes\.\n  An empty snapshot would make every phrase below a gap/,
+    );
   });
 });
 
