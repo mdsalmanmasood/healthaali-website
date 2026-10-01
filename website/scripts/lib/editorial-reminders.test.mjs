@@ -49,7 +49,13 @@ const post = (slug, ids = [], extra = {}) => ({
   ...extra,
 });
 
-const issue = (number, title) => ({ number, title, url: `${SITE}/issues/${number}` });
+/** An open reminder, as `gh issue list --json …` reports one. */
+const issue = (number, title, labels = [{ name: "editorial" }]) => ({
+  number,
+  title,
+  url: `${SITE}/issues/${number}`,
+  labels,
+});
 
 /* ── the title, and finding the video again ───────────────────────────────── */
 
@@ -170,6 +176,18 @@ describe("plan", () => {
     assert.deepEqual(result.orphaned.map((entry) => entry.number), [9]);
     assert.deepEqual(result.close, []);
     assert.deepEqual(result.waiting, []);
+  });
+
+  it("takes only the issues carrying the label, whatever their title says", () => {
+    /* Somebody else's issue, worded like ours and about a video we do know: it
+       is not a reminder, so it is neither closed nor counted as tracking. */
+    const notOurs = issue(4, issueTitleFor(written), [{ name: "bug" }]);
+    const result = plan({ recipes, posts, gaps, issues: [notOurs], site: SITE });
+
+    assert.deepEqual(result.close, []);
+    assert.deepEqual(result.waiting, []);
+    assert.deepEqual(result.orphaned, []);
+    assert.deepEqual(result.open.map((entry) => entry.recipe.id), ["9X4sYFzklpI"]);
   });
 
   it("handles a video whose phrases are all covered, which is the common case", () => {

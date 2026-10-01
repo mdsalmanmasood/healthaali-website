@@ -31,11 +31,11 @@
  *
  * What is here, and what is not
  * -----------------------------
- * This file reads the state (the snapshot, the posts, the open reminders) and
- * carries the plan out with three `gh` calls. The plan itself — what should be
- * open, what should be closed, what is already in place, and what each reminder
- * says — is in `lib/editorial-reminders.mjs`, where it can be tested without a
- * token, a repository or a network.
+ * This file reads the state (the snapshot, the posts, the open issues) and
+ * carries the plan out with a few `gh` calls. The plan itself — which issues are
+ * ours, what should be open, what should be closed, what is already in place,
+ * and what each reminder says — is in `lib/editorial-reminders.mjs`, where it can
+ * be tested without a token, a repository or a network.
  *
  * Why `gh`, and what it needs
  * ---------------------------
@@ -58,7 +58,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findGaps, readPosts, readSnapshot } from "./lib/editorial-gaps.mjs";
-import { plan } from "./lib/editorial-reminders.mjs";
+import { carriesLabel, plan } from "./lib/editorial-reminders.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, "..");
@@ -126,20 +126,27 @@ function gh(args) {
   }
 }
 
-/** The open reminders, as `gh` reports them. */
+/**
+ * The open issues, as `gh` reports them.
+ *
+ * Every open issue, not only the labelled ones: which reminders are ours is
+ * decided by the label in `plan`, and asking for `--label <name>` instead would
+ * make the whole run depend on how the tracker treats a filter for a label that
+ * does not exist yet — which is the state on the first run after this is
+ * installed. The list is capped at `--limit`, so a repository with hundreds of
+ * open issues would need it raised.
+ */
 const listOpen = () =>
   JSON.parse(
     gh([
       "issue",
       "list",
-      "--label",
-      LABEL,
       "--state",
       "open",
       "--limit",
       String(LIMIT),
       "--json",
-      "number,title,url",
+      "number,title,url,labels",
     ]),
   );
 
@@ -173,8 +180,16 @@ async function main() {
     ? JSON.parse(await readFile(path.resolve(ROOT, ISSUES_JSON), "utf8"))
     : listOpen();
 
+  const ours = issues.filter((issue) => carriesLabel(issue, LABEL));
   const { gaps } = findGaps({ recipes, posts });
-  const { open, close, waiting, orphaned } = plan({ recipes, posts, gaps, issues, site: SITE });
+  const { open, close, waiting, orphaned } = plan({
+    recipes,
+    posts,
+    gaps,
+    issues,
+    site: SITE,
+    label: LABEL,
+  });
 
   const unwritten = recipes.filter(
     (recipe) => !posts.some((post) => post.embeds.has(recipe.id)),
@@ -184,7 +199,7 @@ async function main() {
   log(
     `  Editorial reminders — ${recipes.length} video(s), ` +
       `${unwritten} with no post behind ${unwritten === 1 ? "it" : "them"}, ` +
-      `${issues.length} open reminder(s)`,
+      `${ours.length} open reminder(s) of ${issues.length} open issue(s)`,
   );
   log(`  label ${LABEL} · site ${SITE}${DRY_RUN ? " · dry run, nothing will be written" : ""}`);
   log("");

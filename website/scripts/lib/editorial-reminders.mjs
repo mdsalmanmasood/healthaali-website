@@ -10,16 +10,30 @@
  *
  * The three questions, in order
  * -----------------------------
- *   1. Which video is this open reminder about? (`videoIdInTitle` — by id, not
- *      by title, because a video can be retitled on YouTube and the reminder
- *      must survive that.)
- *   2. Should it be open? (`plan` — a video no post embeds.)
- *   3. What does it say? (`issueTitleFor`, `issueBodyFor`, `closeCommentFor`.)
+ *   1. Is this issue ours? (`carriesLabel` — the label, not the title: an issue
+ *      somebody wrote by hand is not turned into a reminder by its wording, and
+ *      a reminder opened here is still ours after a retitle on YouTube.)
+ *   2. Which video is it about? (`videoIdInTitle` — by id, not by title, because
+ *      a video can be retitled and the reminder must survive that.)
+ *   3. Should it be open? (`plan` — a video no post embeds.)
+ *   4. What does it say? (`issueTitleFor`, `issueBodyFor`, `closeCommentFor`.)
  *
  * Nothing here talks to GitHub, reads a file or prints anything.
  */
 
 import { gapsFor } from "./editorial-gaps.mjs";
+
+/**
+ * Is this issue one of ours?
+ *
+ * The label is what decides, and it is read here rather than left to a search
+ * filter for a reason: the script reads every open issue and takes the ones
+ * carrying the label, so nothing depends on how the tracker treats a filter for
+ * a label that does not exist yet — which is exactly the state this runs in the
+ * first time.
+ */
+export const carriesLabel = (issue, label) =>
+  (issue.labels ?? []).some((entry) => (typeof entry === "string" ? entry : entry?.name) === label);
 
 /**
  * The title of a reminder.
@@ -109,8 +123,9 @@ export function closeCommentFor({ recipe, posts, site }) {
  * `gaps` is the whole-library phrase finding (see `findGaps`), filtered here to
  * the phrases each video publishes, so the issue says which words no post has.
  */
-export function plan({ recipes, posts, gaps, issues, site }) {
+export function plan({ recipes, posts, gaps, issues, site, label = "editorial" }) {
   const ids = recipes.map((recipe) => recipe.id);
+  const ours = issues.filter((issue) => carriesLabel(issue, label));
 
   /* Which posts carry each video, and which video each open reminder is about. */
   const carried = new Map();
@@ -120,7 +135,7 @@ export function plan({ recipes, posts, gaps, issues, site }) {
 
   const tracking = new Map();
   const orphaned = [];
-  for (const issue of issues) {
+  for (const issue of ours) {
     const id = videoIdInTitle(issue.title, ids);
     if (!id) orphaned.push(issue);
     else if (!tracking.has(id)) tracking.set(id, issue);
