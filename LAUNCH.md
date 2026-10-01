@@ -491,6 +491,16 @@ also mean "a post covers this and never says so", and only a person can tell
 which. A finding whose phrase is close to one already covered is worth reading
 before a new post is commissioned for it.
 
+The daily sync asks the same question, at the moment it is worth asking. When
+`npm run recipes` picks up a new video, the report the scheduled workflow writes
+now names the phrases that video publishes which no post answers, and says
+whether any post carries it yet — so the reminder arrives in the pull request that
+updates the snapshot, the morning after the video goes out, instead of waiting for
+somebody to remember the report. Both go through the same rules, in
+`website/scripts/lib/editorial-gaps.mjs`, so the two can never disagree about the
+same video; and like the report it is a note rather than a failure, because a new
+video with nothing written about it is the normal state of a new video.
+
 ### What is not done, and cannot be done from here
 
 Search Console is the one step with no CLI path, because it authenticates as the

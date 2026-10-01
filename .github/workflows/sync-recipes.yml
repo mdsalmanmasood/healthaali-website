@@ -23,6 +23,27 @@
 # branch every morning would bury the repository in near-identical pull
 # requests, and a reviewer would have no way to tell them apart.
 #
+# What the new video still needs written
+# --------------------------------------
+# A sync that only updates a JSON file has answered half the question. The other
+# half is editorial: the channel has just described a dish in its own words, and
+# nothing on the site may have been written about it yet. The report this job
+# writes — and puts in the step summary, the commit message and the pull request
+# body — now says which phrases the new videos publish that no post answers, and
+# which of them no post carries at all.
+#
+# It is the same question `npm run report:gaps` answers for the whole library,
+# through the same module (`website/scripts/lib/editorial-gaps.mjs`), so the two
+# can never disagree about the same video. The difference is timing: this runs
+# the morning after the video goes out, in the run that already opens a pull
+# request, rather than whenever somebody remembers to ask.
+#
+# It reports and never fails. A new video with no post behind it is the normal
+# state of a new video, and refusing to publish the snapshot because the writing
+# has not happened yet would be backwards. If the posts cannot be read, the
+# report says the check was skipped, so silence is never mistaken for "nothing is
+# missing".
+#
 # Why it verifies the change itself
 # ---------------------------------
 # GitHub suppresses workflow runs for events caused by the repository's

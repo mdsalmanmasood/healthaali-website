@@ -49,6 +49,17 @@
  * Instagram has no equivalent public structured feed (its oEmbed and Graph
  * endpoints are token-gated), so Instagram posts are added by hand to
  * `src/data/recipes.json` with `"source": "instagram"`. A sync preserves them.
+ *
+ * The report also answers the editorial half of a new upload.
+ *
+ * A video the channel has just published has a description in the publisher's
+ * own words, and no post on this site may be about it yet. The `--report`
+ * summary therefore lists, for the videos this run added or retitled, which of
+ * their phrases no post answers — the same question `npm run report:gaps` asks
+ * of the whole library, through the same module (`lib/editorial-gaps.mjs`), so
+ * the two cannot disagree. It reports and never fails: a new video with nothing
+ * written about it is the normal state of a new video, and the pull request the
+ * scheduled workflow opens is exactly where that reminder belongs.
  */
 
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
@@ -61,6 +72,7 @@ import {
   assertSnapshot,
   sortByPublished,
 } from "../src/lib/recipe-schema.mjs";
+import { embedsByVideo, findGaps, gapsFor, readPosts } from "./lib/editorial-gaps.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, "..");
@@ -107,6 +119,9 @@ const FORCE = hasFlag("--force");
 const REPORT = option("--report", null);
 const REPORT_MD = REPORT ? path.resolve(ROOT, REPORT) : null;
 const CHANNEL_INPUT = option("--channel", process.env.YOUTUBE_CHANNEL_ID ?? DEFAULT_CHANNEL_ID);
+/* The posts the editorial check reads. Nothing is fetched: the corpus is in this
+   repository, which is the point of the check. */
+const BLOG_DIR = path.resolve(ROOT, option("--posts", path.join("src", "content", "blog")));
 
 /* ── small helpers ────────────────────────────────────────────────────────── */
 
@@ -304,9 +319,21 @@ async function listThumbnails() {
  * `.github/workflows/sync-recipes.yml` reads this file to decide whether to
  * propose a pull request, and appends it to the GitHub step summary so every
  * run leaves a readable record. It reports titles and links, never a raw JSON
- * diff, because a reviewer's question is always "what is new?"
+ * diff, because a reviewer's question is always "what is new?" — and, for a new
+ * video, the question after that, which is what has still to be written about
+ * it.
  */
-async function writeReport({ changed, added, updated, retained, recipes, channel, feedCount, dryRun }) {
+async function writeReport({
+  changed,
+  added,
+  updated,
+  retained,
+  recipes,
+  channel,
+  feedCount,
+  dryRun,
+  editorial,
+}) {
   if (!REPORT_MD) return;
 
   const lines = [];
@@ -333,6 +360,11 @@ async function writeReport({ changed, added, updated, retained, recipes, channel
       `The feed's ${feedCount} video${feedCount === 1 ? "" : "s"} are all already in the snapshot, ` +
         "so no file was written and the working tree is untouched."
     );
+  }
+
+  if (editorial) {
+    lines.push("");
+    lines.push(...editorialSection(editorial, recipes));
   }
 
   if (updated.length > 0) {
@@ -379,6 +411,76 @@ async function writeReport({ changed, added, updated, retained, recipes, channel
        written must not look like a failed sync. */
     log(`  note: could not write the report to ${REPORT_MD}: ${error.message}`);
   }
+}
+
+/**
+ * Which of the phrases these videos publish no post answers yet.
+ *
+ * Returns null when there is nothing to check: a run that added and retitled
+ * nothing has no editorial question in it. A failure to read the posts comes
+ * back as `{ error }` rather than an exception — publishing the snapshot is the
+ * job, and a blog directory that cannot be read must not stop it. The report
+ * then says the check was skipped, so a missing answer is never mistaken for a
+ * clean one.
+ */
+async function editorialFinding(recipes, ids) {
+  if (ids.length === 0) return null;
+
+  try {
+    const posts = await readPosts(BLOG_DIR, { root: ROOT });
+    const { gaps } = findGaps({ recipes, posts });
+    return { ids, gaps: gapsFor(gaps, ids), embeds: embedsByVideo(posts) };
+  } catch (error) {
+    return { ids, error: String(error.message).split("\n")[0] };
+  }
+}
+
+/**
+ * The report section for that finding, as Markdown lines.
+ *
+ * One line per video, because the question a reviewer has is "what does this
+ * video still need?" rather than "what does the library still need?" — the
+ * second question is `npm run report:gaps`, and it is the same arithmetic.
+ */
+function editorialSection({ ids, gaps = [], embeds, error }, recipes) {
+  const lines = ["#### What these videos need written", ""];
+
+  if (error) {
+    lines.push(
+      `The phrase check was skipped: ${error}`,
+      "",
+      "That is a note that this check could not run, not a claim that nothing is missing."
+    );
+    return lines;
+  }
+
+  for (const id of ids) {
+    const recipe = recipes.find((entry) => entry.id === id);
+    const missing = gaps.filter((gap) => gap.ids.includes(id)).map((gap) => `“${gap.phrase}”`);
+    const shown = embeds.get(id) ?? 0;
+
+    const what =
+      missing.length > 0
+        ? `no post covers: ${missing.join(", ")}`
+        : "every phrase it publishes already appears in a post";
+
+    lines.push(
+      `- **${id}** ${recipe?.title ?? "(not in the snapshot)"} — ${what}. ` +
+        (shown > 0
+          ? `Already shown in ${shown} post${shown === 1 ? "" : "s"}.`
+          : "No post shows the video yet.")
+    );
+  }
+
+  lines.push("");
+  lines.push(
+    "Both halves are worth reading: a phrase means the channel has described something",
+    "that no post describes, and \"no post shows the video yet\" means the video itself has",
+    "not been carried. A phrase finding can also mean a post covers the subject without",
+    "naming it, in which case the fix is a sentence rather than a page — see §7 of LAUNCH.md."
+  );
+
+  return lines;
 }
 
 /** `npm run check:recipes` — validate what is committed, without the network. */
@@ -572,6 +674,17 @@ async function sync() {
   const previousJson = existsSync(OUT_FILE) ? await readFile(OUT_FILE, "utf8") : "";
   const changed = json !== previousJson;
 
+  /* The editorial half — see the note at the top of this file. The videos to ask
+     about are the ones this run brought in or retitled, because those are the
+     ones somebody will have to write about next. */
+  const editorialIds = [
+    ...addedRecipes.map((recipe) => recipe.id),
+    ...updatedRecipes
+      .filter(({ previous, current }) => previous.title !== current.title)
+      .map(({ current }) => current.id),
+  ];
+  const editorial = await editorialFinding(recipes, editorialIds);
+
   await writeReport({
     changed,
     added: addedRecipes,
@@ -581,6 +694,7 @@ async function sync() {
     channel,
     feedCount: feed.entries.length,
     dryRun: DRY_RUN,
+    editorial,
   });
 
   if (DRY_RUN) {

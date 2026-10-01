@@ -79,7 +79,7 @@ Windows: **`preview.bat`** builds first, then serves `dist/`.
 | `npm run check:blog-dates` | Fail when a post is dated before the video it embeds |
 | `npm run check:weight` | Fail when a built page exceeds its gzipped HTML/CSS/JS budget |
 | `npm run check:seo` | One `<h1>`, unique titles and descriptions, canonicals, parseable JSON-LD, and a sitemap that agrees with the build |
-| `npm run report:gaps` | Report the phrases the channel publishes that no post answers, and the thinnest topic pages (a report, not a gate — it always exits 0) |
+| `npm run report:gaps` | Report the phrases the channel publishes that no post answers, and the thinnest topic pages (a report, not a gate — it always exits 0). The scheduled sync asks the same question about a new video, in its report |
 | `npm run verify` | `check:recipes` + `check:blog-links` + `check:blog-dates` + `build` + `check:placeholders` + `check:links` + `check:weight` + `check:a11y` — exactly what CI runs |
 | `npm run assets` | Re-derive every image from the supplied brand kit |
 | `npm run blog:images` | Convert any blog cover artwork to WebP (quality 75) and wire it into the post |
@@ -329,8 +329,11 @@ src/
 └── styles/               tokens.css, global.css, components.css, utilities.css
 public/                   favicon, icons, manifest, robots.txt, og-image
 scripts/
+├── lib/                  rules shared by more than one script
+│   └── editorial-gaps.mjs  phrases the videos publish that no post answers
 ├── extract-assets.mjs    re-derive every image from the supplied brand kit
-├── sync-recipes.mjs      fetch the recipe snapshot from the YouTube feed
+├── sync-recipes.mjs      fetch the recipe snapshot from the YouTube feed, and report
+│                         what a new video still needs written
 ├── blog-images.mjs       blog cover art -> WebP (q75) + frontmatter, and the prompts
 ├── check-links.mjs       link / anchor / sitemap integrity of the built site
 ├── check-placeholders.mjs fail on `[bracketed]` text left in a built page
@@ -381,6 +384,14 @@ an explicit "nothing new" when that is the case. It is written on **every** run,
 including one that changes nothing, which is what lets the scheduled workflow decide what
 to do by reading a file instead of interpreting an exit code. See
 [Scheduled recipe sync](#scheduled-recipe-sync).
+
+The digest also answers the editorial half of a new upload: for the videos the run added
+or retitled, it lists the phrases no post covers yet, and whether any post carries the
+video at all. That is the same question `npm run report:gaps` asks of the whole library,
+through the same rules (`scripts/lib/editorial-gaps.mjs`), asked at the moment it is
+worth asking — the morning after the video goes out, in the pull request a reviewer is
+already reading. It reports and never fails: a new video with nothing written about it is
+the normal state of a new video.
 
 The channel is set by `--channel` / `YOUTUBE_CHANNEL_ID` (a `UC…` id, an `@handle` or a
 channel URL) and defaults to the verified HealThaali account already linked from
