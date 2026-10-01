@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # HealThaali — continuous integration
 #
-# Ten gates, in the order a failure is cheapest to understand:
+# Eleven gates, in the order a failure is cheapest to understand:
 #
 #   1. Install       `npm ci` from the committed lockfile
 #   2. Typecheck     `astro check` — TypeScript + template diagnostics
@@ -20,6 +20,10 @@
 #   9. Check weight  no built page may exceed its gzipped HTML/CSS/JS budget
 #  10. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
 #                    in both the light and the dark colour scheme
+#  11. Test launch   the deep mode of check:launch, against a stub Cloudflare
+#                    API. It is the one part of the launch tooling that no
+#                    other step here can reach: it needs a token, and CI has
+#                    no token, so without this it would never run again
 #
 # Every step runs the same npm script a developer runs locally, so CI cannot
 # drift from the documented workflow: if it is green here, `npm run verify`
@@ -129,3 +133,11 @@ jobs:
       # already installed on the runner; no browser is downloaded.
       - name: Check accessibility
         run: npm run check:a11y
+
+      # Independent of the build, and the only gate that touches the deep mode
+      # of check:launch — which needs CLOUDFLARE_API_TOKEN and therefore never
+      # executes in this pipeline. The test supplies a token and points the
+      # script's CLOUDFLARE_API override at a stub server on a loopback port, so
+      # no account, no token and no Cloudflare call is involved.
+      - name: Test the launch check's deep mode
+        run: npm run test:launch

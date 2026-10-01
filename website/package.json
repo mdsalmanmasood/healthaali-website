@@ -22,7 +22,8 @@
     "check:weight": "node scripts/check-weight.mjs",
     "check:blog-links": "node scripts/check-blog-links.mjs",
     "check:blog-dates": "node scripts/check-blog-dates.mjs",
-    "verify": "npm run check:recipes && npm run check:blog-links && npm run check:blog-dates && npm run build && npm run check:placeholders && npm run check:links && npm run check:weight && npm run check:a11y",
+    "test:launch": "node --test \"scripts/**/*.test.mjs\"",
+    "verify": "npm run check:recipes && npm run check:blog-links && npm run check:blog-dates && npm run build && npm run check:placeholders && npm run check:links && npm run check:weight && npm run check:a11y && npm run test:launch",
     "assets": "node scripts/extract-assets.mjs",
     "blog:images": "node scripts/blog-images.mjs",
     "recipes": "node scripts/sync-recipes.mjs"
