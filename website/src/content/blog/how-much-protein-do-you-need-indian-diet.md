@@ -48,6 +48,8 @@ This is where most people are surprised, and where we spend most of our time in 
 
 Read that table once more, and the usual problem becomes visible. A plate of two rotis, a katori of dal, a bowl of rice and a sabzi lands somewhere around **20 to 24 g of protein**. For a 70 kg adult that is not a bad meal — but if the other two meals look the same, the day finishes at 60 g only by accident.
 
+One row in that table is easy to walk past, though. Fish — bangda, in this case — is 19 to 22 g for 100 g cooked, which is close to what the whole plate above carries, and it is the only protein listed there that can be the main dish rather than an accompaniment to one. [The banana leaf fish fry post](/blog/bangda-banana-leaf-fish-fry) takes a single portion of it through the rest of the plate.
+
 We round deliberately. Portion sizes vary wildly between households, brands differ, and a dal that has been simmered down carries more per spoon than a thin one. Treat each figure as a band, not a promise.
 
 <figure class="yt-embed" data-yt="xcvxfjo58Mo" data-yt-title="High-protein soya oats cheela, ready in twenty minutes" data-yt-shape="vertical">
