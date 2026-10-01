@@ -31,7 +31,7 @@ A snack built on sugar and salt does one thing well: it makes you want another o
 
 The same argument runs through the rest of the day. Protein at breakfast is [the cheapest place to add it](/blog/protein-at-breakfast-indian-food), and the evening is where [the day's invisible calories](/blog/sugar-in-an-ordinary-indian-day) usually live — two teaspoons in each cup of chai, four times, is 32 g of sugar before anything has been called a snack.
 
-So the evening hour is worth solving twice over: it replaces the packet, and it stops the 9 pm dinner from being a bigger one.
+So the evening hour is worth solving twice over: it replaces the packet, and it stops the 9 pm dinner from being a bigger one. That is the entire case for the high-protein evening snack as a category — it is not a treat being allowed, it is the plate that keeps the next meal a normal size.
 
 ## The chaat shape, which is the trick
 

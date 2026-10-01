@@ -475,12 +475,21 @@ why. Beside the table it lists the dishes no hub rule claims, the tags no hub is
 built on, the posts filed under no hub, and the videos no post embeds.
 
 It is a report, not a gate: it exits 0 however empty the list is, and it is not
-part of `npm run verify` or CI. Run against the library on 1 October 2026, after
-the post written from its first pass, it reports 5 uncovered phrases out of 63
-published, `/no-oil-recipes/` still the thinnest hub (5 dishes, 3 posts), and one
-dish no rule claims (the yogurt bowl). The one video no post had carried at all —
-the bangda banana-leaf fry — was the dish that first pass named, and it was
-written up from the list: every video now appears in at least one post.
+part of `npm run verify` or CI. Run against the library on 1 October 2026, once
+the writing it asked for had been done, it reports **no uncovered phrase out of 63
+published**, `/no-oil-recipes/` still the thinnest hub (5 dishes, 4 posts), and one
+dish with no rule to claim it (the yogurt bowl). Every one of the 15 videos now
+appears in at least one post.
+
+The first pass found 10 phrases and one unembedded video. Of the last five
+phrases, three needed pages — the fruit bowl, and a weight-loss and zero-oil
+breakfast — while two, `protein evening snack` and `high protein snack`, were the
+channel's own labels for subjects two posts already covered, and closed when
+those posts named what they were about. That is worth knowing about the report:
+a phrase it calls uncovered can mean "no post has written about this", and it can
+also mean "a post covers this and never says so", and only a person can tell
+which. A finding whose phrase is close to one already covered is worth reading
+before a new post is commissioned for it.
 
 ### What is not done, and cannot be done from here
 

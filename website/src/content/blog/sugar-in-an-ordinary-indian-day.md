@@ -73,7 +73,7 @@ That is also the practical case for the barcode side of the app on [the features
 
 ## Two things this post is not saying
 
-**Fruit is not the problem.** Whole fruit carries sugar with fibre, water and micronutrients, it is difficult to overeat, and no guidance on this page is asking you to avoid it. Juice and dried fruit are the concentrated versions, and those are worth watching.
+**Fruit is not the problem.** Whole fruit carries sugar with fibre, water and micronutrients, it is difficult to overeat, and no guidance on this page is asking you to avoid it. Juice and dried fruit are the concentrated versions, and those are worth watching. [What a fruit bowl does and does not carry](/blog/fruit-and-the-fruit-bowl) is the longer version of that paragraph.
 
 **And this is not a diabetes plan.** If you have diabetes, pre-diabetes, PCOS or a thyroid condition, the useful version of this conversation is with your doctor or dietitian — blood sugar is driven by more than sugar, and a general post full of teaspoons is not a treatment plan. If you have ever had a difficult relationship with food, a sugar audit is also not the exercise to start; that is worth saying plainly rather than at the end of a list.
 

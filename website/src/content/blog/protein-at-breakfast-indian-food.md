@@ -84,4 +84,4 @@ Not because breakfast is magic, and not because skipping it is a crime. Three pr
 
 **And it is not a claim that poha is a bad breakfast.** It is an excellent one. It is simply a carbohydrate-led dish, and a carbohydrate-led breakfast at 8 am is why the day is short of protein at 8 pm. The fix is one addition, made once, repeated for a year.
 
-If the weeknight version of this problem is the one you recognise, the same logic for the evening is in [high-protein meals you can cook in fifteen minutes](/blog/high-protein-meals-under-15-minutes). All of the cooking mentioned here is filmed on [the recipes page](/recipes).
+If the weeknight version of this problem is the one you recognise, the same logic for the evening is in [high-protein meals you can cook in fifteen minutes](/blog/high-protein-meals-under-15-minutes). And when the goal is a deficit rather than protein on its own, [the breakfast that holds until lunch](/blog/breakfast-that-holds-until-lunch) looks at this same first meal from the calorie side. All of the cooking mentioned here is filmed on [the recipes page](/recipes).

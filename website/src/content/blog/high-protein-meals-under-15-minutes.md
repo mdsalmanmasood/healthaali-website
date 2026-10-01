@@ -28,7 +28,7 @@ Soya is the one on that list people give up on after a single try, usually becau
 
 Almost every fast protein meal is one of these:
 
-1. **The pocket.** Something stuffed into a roti, a dosa or a paratha, cooked on a tawa. One pan, no serving dish.
+1. **The pocket.** Something stuffed into a roti, a dosa or a paratha, cooked on a tawa. One pan, no serving dish, and the shape people reach for when what they want is a high-protein snack rather than a full meal.
 2. **The bowl.** Curd, oats, chana, sprouts, fruit, nuts, a squeeze of lemon. Zero to five minutes of work, and the combination is forgiving.
 3. **The quick fry.** A hot pan, a protein, some vegetables, a finished masala. Ten minutes, and it doubles as lunch the next day.
 
@@ -47,7 +47,7 @@ Once you see meals in those three shapes, you stop needing recipes to be invente
 
 Some nights there is no fifteen minutes. On those nights the honest answer is not a recipe, it is a bowl: curd or hung curd, something with texture, fruit, and something with fat in it so it holds you.
 
-That is what the video below is — and it is worth noticing that the protein comes from the curd, not from a powder or a bar. If you want it closer to 25 or 30 g, a couple of boiled eggs on the side, or a spoon of roasted chana, does the job without a pan.
+That is what the video below is — and it is worth noticing that the protein comes from the curd, not from a powder or a bar. If you want it closer to 25 or 30 g, a couple of boiled eggs on the side, or a spoon of roasted chana, does the job without a pan. [What a fruit bowl can and cannot be](/blog/fruit-and-the-fruit-bowl) is the post that takes that bowl apart properly.
 
 <figure class="yt-embed" data-yt="izFqekmbNAs" data-yt-title="A yogurt bowl with fruit and chia seeds" data-yt-shape="vertical">
   <a class="yt-embed__fallback" href="https://www.youtube.com/shorts/izFqekmbNAs" target="_blank" rel="noopener noreferrer">
