@@ -1,0 +1,89 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# HealThaali — keep a copy of this repository on a host that is not GitHub
+#
+# Two steps, and the order matters:
+#
+#   1. Prove the mechanism. `npm run mirror -- --self-test` pushes every ref to a
+#      throwaway bare repository inside the runner, compares the refs by object
+#      id, clones the result and checks it is this repository. It needs no host,
+#      no account and no credential, so it runs on every push — which means the
+#      mirror tooling cannot rot quietly while nothing is configured.
+#
+#   2. Mirror for real, if a target is configured. With no `MIRROR_URL` secret
+#      the step reports that and passes, exactly like the deep mode of
+#      check:launch without a token: an item that has not been done yet is
+#      outstanding, not broken.
+#
+# Set it up (once, ~2 minutes):
+#
+#   - create an empty repository on a second host — Codeberg, GitLab, Bitbucket,
+#     anything that speaks git
+#   - add two repository secrets here: MIRROR_URL (the clone URL) and, for a
+#     private target, MIRROR_TOKEN (a push token; MIRROR_USER too if the host
+#     wants the account name rather than the token as the username)
+#
+# MIRROR.md is the long version, including what a mirror does not contain and
+# what "verified" means.
+#
+# A fetches-everything checkout is required: a shallow clone has no history to
+# push. Nothing else is installed, because the script has no dependencies — so a
+# broken lockfile cannot disguise a mirror problem.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Mirror
+
+on:
+  push:
+    branches: [main]
+  # A daily run catches the case a push cannot: the workflow itself is fine but
+  # the target stopped accepting (a revoked token, a renamed repository, a host
+  # that moved). Six hours of silence would otherwise look like six hours of
+  # nothing to mirror.
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: mirror
+  cancel-in-progress: false
+
+# The pipeline reads this repository; the credential for the other host is a
+# secret it is handed, not a permission granted here.
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: website
+
+jobs:
+  mirror:
+    name: Mirror to the second host
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the repository, with its history
+        uses: actions/checkout@v7
+        with:
+          # The whole history: this is the thing being copied.
+          fetch-depth: 0
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      # Proves the push, the ref comparison and the clone — against a local bare
+      # repository, so it passes even before any second host exists.
+      - name: Prove the mirror mechanism
+        run: npm run mirror -- --self-test
+
+      # Reports "not configured" and passes when MIRROR_URL is unset, so adding
+      # the secret is the only step left to switch this on.
+      - name: Mirror to the configured host
+        env:
+          MIRROR_URL: ${{ secrets.MIRROR_URL }}
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          MIRROR_USER: ${{ secrets.MIRROR_USER }}
+        run: npm run mirror -- --optional

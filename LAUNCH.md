@@ -30,6 +30,9 @@ valid certificate.
 - [ ] A repository bundle copied somewhere **off this machine** —
       `npm run backup` writes one, §8; nothing in the repository can make the copy
       that matters
+- [ ] A second git host keeping a mirror of this repository — `npm run mirror`
+      does the push and verifies it; `mirror.yml` switches on the moment a
+      `MIRROR_URL` secret exists (§8, `MIRROR.md`)
 - [ ] Google Search Console: the property verified and `sitemap-index.xml`
       submitted — see §7. Nothing about the site's ranking can be measured until
       this exists, because this is the only place the queries it is found for
@@ -173,6 +176,7 @@ given a read-only token, and prints the tail of a failed build's log (§5).
 | `sync-recipes.yml` | daily 03:00 UTC, manual | proposes the YouTube snapshot as a PR only when it really changed |
 | `uptime.yml` | every six hours at :17, manual | probes the live domain and its certificate |
 | `launch-check.yml` | every six hours at :47, manual | re-runs `check:launch`, so launch regressions are caught without anyone looking; also asserts the deployed revision comes from this repository |
+| `mirror.yml` | push to `main`, daily at 04:23, manual | pushes every branch and tag to a second git host and verifies the refs by object id — the copy of this repository that is not GitHub (§8, `MIRROR.md`). Reports `not configured` and passes until the `MIRROR_URL` secret exists |
 
 `uptime.yml` was red until the domain began serving the Pages project — the
 intended signal, not a broken workflow. Now that it answers, a red run means a
@@ -228,6 +232,7 @@ below were measured on 1 October 2026.
 | `/.freebuff/` | — | Local agent tooling state. Nothing about the site depends on it, and it changes on every run. |
 | `/backups/` | 7.2 MB per bundle | Off-machine backups from `npm run backup` (§8). A bundle of the whole history must not live inside the history it duplicates — the point is to copy it elsewhere. |
 | `/.restore-drill/` | — | The scratch clone `npm run backup -- --drill` restores into and builds, to prove the bundle still restores. Removed again on success. |
+| `/.mirror-drill/` | — | The throwaway bare repository `npm run mirror -- --self-test` pushes to, which proves the mirror mechanism with no second host and no credential. Removed again on success. |
 | `lighthouse-*.json` | — | Reports from the manual measurement in §6: regenerated on demand, and a number in a file is not a record of anything. |
 | `.DS_Store`, `Thumbs.db`, `Desktop.ini`, `*~` | — | Operating-system cruft, from either operating system. |
 
@@ -492,7 +497,31 @@ this — it cannot be cloned, it loses the history that explains every decision 
 it, and whatever was half-edited when it was taken is captured as if it were
 finished.
 
-Four things are deliberately not in it, and each has a different answer:
+### The other half: a mirror on a second host
+
+A bundle is a copy somebody has to remember to make and then carry. A *mirror* is
+the same history pushed to a host that is not GitHub, one push behind on every
+push, with no memory required:
+
+```bash
+npm run mirror                 # to the `mirror` remote, or MIRROR_URL
+npm run mirror -- --self-test  # prove the mechanism with no host and no account
+```
+
+`mirror.yml` runs both: the self-test on every push, so the tooling cannot rot
+while nothing is configured, and the real push whenever a `MIRROR_URL` secret
+exists. It reports `not configured` and passes otherwise — outstanding rather than
+broken, the same contract `check:launch` uses without a token.
+
+The push is verified rather than trusted: every ref is compared against the
+target's own answer by object id, and a target whose default branch does not
+resolve fails the run, because that is a mirror which holds every commit and
+still shows nothing when browsed. Nothing on the target is ever deleted, and no
+credential reaches the log. Its own unfixable gap is the same as the bundle's:
+the 44 MB brand drop in `/asset/` is not in git and therefore not on the mirror
+either. `MIRROR.md` has the setup and the restore path.
+
+Four things are deliberately not in a bundle, and each has a different answer:
 
 | Not in the bundle | Why | If it is all you ever have |
 | --- | --- | --- |

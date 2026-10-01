@@ -26,6 +26,10 @@
 /backups/
 /.restore-drill/
 
+# The throwaway bare repository `npm run mirror -- --self-test` pushes to, to
+# prove the mirror mechanism without a second host or a credential.
+/.mirror-drill/
+
 # 2,412 lines written for the build this site was: a working document, not
 # repository documentation. What outlives it is in website/README.md.
 /HealthAali_Astro_Website_Build_Guide.md
