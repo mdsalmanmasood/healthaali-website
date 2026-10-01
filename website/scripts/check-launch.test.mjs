@@ -15,7 +15,9 @@
  * mocked inside the script, and no token or account is involved.
  *
  * Every case starts from a healthy install and breaks exactly one thing, so a
- * failure names its own cause.
+ * failure names its own cause. Where one change genuinely trips two rules — a
+ * parked A record at the apex is both a parking entry and a hand-made record —
+ * the case says so and asserts both, rather than hiding half of the behaviour.
  *
  * What is deliberately not asserted
  * ---------------------------------
@@ -160,6 +162,13 @@ const RECORDS = [
   { name: `www.${SITE_HOST}`, type: "CNAME", content: PAGES_HOST, proxied: true },
 ];
 
+/**
+ * One of the addresses a registrar's parking page resolves to. The script has
+ * its own copy; it cannot be imported from there without running the whole
+ * check, so the value is repeated here on purpose.
+ */
+const PARKED_ADDRESS = "3.33.130.190";
+
 const PROJECT_FIXTURE = {
   name: PROJECT,
   subdomain: PAGES_HOST,
@@ -223,6 +232,7 @@ const refused = (status, code, message) => ({
 function routesFor(overrides = {}) {
   const zones = "zones" in overrides ? overrides.zones : [ZONE];
   const project = "project" in overrides ? overrides.project : PROJECT_FIXTURE;
+  const records = overrides.records ?? RECORDS;
   const domains = overrides.domains ?? ACTIVE_DOMAINS;
   const deployments = overrides.deployments ?? [SUCCESSFUL_DEPLOYMENT];
   const logs = overrides.logs ?? [];
@@ -235,7 +245,7 @@ function routesFor(overrides = {}) {
     if (route === "/zones") {
       return zones ? okay(zones) : refused(403, 9109, "Unauthorized to access requested resource");
     }
-    if (route === `/zones/${ZONE_ID}/dns_records`) return okay(RECORDS);
+    if (route === `/zones/${ZONE_ID}/dns_records`) return okay(records);
     if (route === pages) return okay(otherProjects);
 
     if (route === `${pages}/${PROJECT}`) {
@@ -362,6 +372,9 @@ describe("check-launch deep mode", () => {
     const { records } = await runCheck();
 
     assert.equal(verdictOf(records, "Cloudflare zone").state, OK);
+    assert.equal(verdictOf(records, "Zone records").state, OK);
+    assert.equal(verdictOf(records, "Zone record (apex)").state, OK);
+    assert.equal(verdictOf(records, "Zone record (www)").state, OK);
 
     // The four settings that have no public footprint — the reason the deep
     // mode exists at all.
@@ -369,6 +382,18 @@ describe("check-launch deep mode", () => {
     assert.equal(verdictOf(records, "Pages source").state, OK);
     assert.equal(verdictOf(records, "Pages environment variables").state, OK);
     assert.equal(verdictOf(records, "Pages custom domains").state, OK);
+
+    // The source verdict names the branch and, when it can tell, says that the
+    // branch is the repository's default one — which is the condition the
+    // mismatch case below negates.
+    assert.match(verdictOf(records, "Pages source").detail, /the repository's default branch/);
+
+    // An install with no variables is healthy, and says so in plain words
+    // rather than pretending the list is unreadable.
+    assert.equal(
+      verdictOf(records, "Pages environment variables").detail,
+      'none set — the honest "coming soon" build'
+    );
 
     assert.equal(verdictOf(records, "Pages deployments").state, OK);
     assert.match(verdictOf(records, "Pages deployments").detail, /succeeded, serving/);
@@ -511,5 +536,178 @@ describe("check-launch deep mode", () => {
     assert.match(api.detail, /skipped/);
 
     assert.deepEqual(deepProblems(records), []);
+  });
+
+  it("calls a leftover parking address a problem, and says what it blocks", async () => {
+    // The single most likely way a launch stalls: the registrar's parking
+    // records stay behind and keep Pages from claiming the names. The deployed
+    // zone has neither, so this branch had never been read by anything.
+    //
+    // The parked A sits at the apex because that is where registrars put it,
+    // and that is why *two* rules fire: a parking entry is also a hand-made
+    // record on a name Pages has to own. Both are asserted, and the second is
+    // the honest consequence of the same one change rather than a hidden extra.
+    const { records } = await runCheck({
+      records: [
+        { name: SITE_HOST, type: "A", content: PARKED_ADDRESS, proxied: false },
+        { name: `www.${SITE_HOST}`, type: "CNAME", content: PAGES_HOST, proxied: true },
+      ],
+    });
+
+    const all = verdictOf(records, "Zone records");
+    assert.equal(all.state, PROBLEM);
+    assert.match(all.detail, /parking entries are present \(A 3\.33\.130\.190\)/);
+    assert.match(all.detail, /they block the Pages custom domain/);
+
+    assert.equal(verdictOf(records, "Zone record (apex)").state, PROBLEM);
+    assert.match(
+      verdictOf(records, "Zone record (apex)").detail,
+      /a hand-made A 3\.33\.130\.190 exists; Pages has to own this name/
+    );
+
+    // The www record is fine, so it stays out of the list.
+    assert.equal(verdictOf(records, "Zone record (www)").state, OK);
+
+    assert.deepEqual(deepProblems(records), ["Zone records", "Zone record (apex)"]);
+  });
+
+  it("calls a hand-made A record a problem, because Pages has to own the name", async () => {
+    // 203.0.113.0/24 is reserved for documentation, so this address cannot be
+    // mistaken for either the parking address or a live host.
+    const { records } = await runCheck({
+      records: [
+        { name: SITE_HOST, type: "A", content: "203.0.113.10", proxied: false },
+        { name: `www.${SITE_HOST}`, type: "CNAME", content: PAGES_HOST, proxied: true },
+      ],
+    });
+
+    const apex = verdictOf(records, "Zone record (apex)");
+    assert.equal(apex.state, PROBLEM);
+    assert.match(apex.detail, /a hand-made A 203\.0\.113\.10 exists/);
+    assert.match(apex.detail, /Pages has to own this name/);
+
+    // Not a parking address, so the zone-wide rule stays quiet: the two
+    // verdicts are about different things and do not echo each other.
+    assert.equal(verdictOf(records, "Zone records").state, OK);
+
+    assert.deepEqual(deepProblems(records), ["Zone record (apex)"]);
+  });
+
+  it("calls a record pointing somewhere else a problem, naming both ends", async () => {
+    // Fully proxied, correct type, and still wrong: ownership means the target
+    // is Pages, not merely that a record exists.
+    const { records } = await runCheck({
+      records: [
+        {
+          name: SITE_HOST,
+          type: "CNAME",
+          content: "cname.somewhere-else.example",
+          proxied: true,
+        },
+        { name: `www.${SITE_HOST}`, type: "CNAME", content: PAGES_HOST, proxied: true },
+      ],
+    });
+
+    const apex = verdictOf(records, "Zone record (apex)");
+    assert.equal(apex.state, PROBLEM);
+    assert.match(apex.detail, /CNAME cname\.somewhere-else\.example/);
+    assert.match(apex.detail, new RegExp(`does not point at ${PAGES_HOST}`));
+
+    assert.deepEqual(deepProblems(records), ["Zone record (apex)"]);
+  });
+
+  it("calls a record with the orange cloud switched off a problem", async () => {
+    // A correct target is not enough on its own: Pages is only reachable
+    // through Cloudflare's edge, so an unproxied record is a dark name.
+    const { records } = await runCheck({
+      records: [
+        { name: SITE_HOST, type: "CNAME", content: PAGES_HOST, proxied: true },
+        { name: `www.${SITE_HOST}`, type: "CNAME", content: PAGES_HOST, proxied: false },
+      ],
+    });
+
+    const www = verdictOf(records, "Zone record (www)");
+    assert.equal(www.state, PROBLEM);
+    assert.match(www.detail, /proxying is off/);
+    assert.match(www.detail, /Pages is only served through Cloudflare's edge/);
+
+    assert.equal(verdictOf(records, "Zone record (apex)").state, OK);
+
+    assert.deepEqual(deepProblems(records), ["Zone record (www)"]);
+  });
+
+  it("calls the names with no records yet outstanding, not broken", async () => {
+    // Before the custom domains are attached the zone has no record for either
+    // name, and the zone-wide count is zero. Neither is a failure — the Pages
+    // custom domain is what creates them.
+    const { records } = await runCheck({ records: [] });
+
+    for (const label of ["Zone record (apex)", "Zone record (www)"]) {
+      const record = verdictOf(records, label);
+      assert.equal(record.state, OUTSTANDING);
+      assert.match(record.detail, /none yet — the Pages custom domain creates it/);
+    }
+
+    assert.equal(verdictOf(records, "Zone records").state, OK);
+    assert.match(verdictOf(records, "Zone records").detail, /0 in total, no parking entries/);
+
+    assert.deepEqual(deepProblems(records), []);
+  });
+
+  it("lists environment variable names in order and never their values", async () => {
+    // The branch that carries secrets has to be exercised without a secret
+    // escaping into the report, which is exactly what this asserts: the names
+    // are named, and the sentinel values are nowhere in the output at all.
+    const { records, stdout } = await runCheck({
+      project: {
+        ...PROJECT_FIXTURE,
+        deployment_configs: {
+          production: {
+            env_vars: {
+              ZONE_SECRET: "value-must-never-be-printed",
+              ANALYTICS_TOKEN: "also-must-never-be-printed",
+            },
+          },
+        },
+      },
+    });
+
+    const vars = verdictOf(records, "Pages environment variables");
+    assert.equal(vars.state, OK);
+    assert.equal(vars.detail, "ANALYTICS_TOKEN, ZONE_SECRET (names only, never values)");
+
+    assert.doesNotMatch(stdout, /must-never-be-printed/);
+    assert.deepEqual(deepProblems(records), []);
+  });
+
+  it("calls a production branch the repository does not have a problem", async () => {
+    // "master" is the classic wrong answer, and a wrong answer here is a quiet
+    // one: pushes build previews, production never publishes, and the site
+    // simply never appears. This repository's only branch is "main", so the
+    // configured name is rejected outright.
+    //
+    // The neighbouring arm — a branch that does exist but is not the default —
+    // cannot be reached from here: `git()` in the script is pinned to this
+    // repository's root, which has one branch, and the harness does not get to
+    // rewrite the repository under test. It is left uncovered on purpose rather
+    // than faked.
+    const { records } = await runCheck({
+      project: {
+        ...PROJECT_FIXTURE,
+        source: {
+          ...PROJECT_FIXTURE.source,
+          config: { ...PROJECT_FIXTURE.source.config, production_branch: "master" },
+        },
+      },
+    });
+
+    const source = verdictOf(records, "Pages source");
+    assert.equal(source.state, PROBLEM);
+    assert.match(source.detail, /mdsalmanmasood\/healthaali-website on branch master/);
+    assert.match(source.detail, /this repository has no such branch/);
+    assert.match(source.detail, /main/);
+    assert.match(source.detail, /pushes build previews only/);
+
+    assert.deepEqual(deepProblems(records), ["Pages source"]);
   });
 });
