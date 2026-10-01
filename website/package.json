@@ -23,6 +23,7 @@
     "check:blog-links": "node scripts/check-blog-links.mjs",
     "check:blog-dates": "node scripts/check-blog-dates.mjs",
     "check:seo": "node scripts/check-seo.mjs",
+    "backup": "node scripts/backup.mjs",
     "test:launch": "node --test \"scripts/**/*.test.mjs\"",
     "verify": "npm run check:recipes && npm run check:blog-links && npm run check:blog-dates && npm run build && npm run check:placeholders && npm run check:links && npm run check:weight && npm run check:seo && npm run check:a11y && npm run test:launch",
     "assets": "node scripts/extract-assets.mjs",

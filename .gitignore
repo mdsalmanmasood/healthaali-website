@@ -10,7 +10,7 @@
 
 # Outer source material / local tooling
 
-# 42 MB and 163 files, its own node_modules included, against a 7.4 MB
+# 44 MB and 164 files, its own node_modules included, against a 7.4 MB
 # repository. It is the read-only input to `npm run assets`
 # (website/scripts/extract-assets.mjs), which derives the images the site serves
 # into website/src/assets/ — those are committed, because a host build needs
@@ -18,6 +18,13 @@
 /asset/
 
 /.freebuff/
+
+# Backups of this repository, made by `npm run backup`, and the scratch clone
+# that `npm run backup -- --drill` restores into and builds. A bundle of the
+# whole history cannot live inside the history it duplicates: it belongs in
+# cloud storage, or on another machine. See RESTORE.md.
+/backups/
+/.restore-drill/
 
 # 2,412 lines written for the build this site was: a working document, not
 # repository documentation. What outlives it is in website/README.md.

@@ -27,6 +27,9 @@ valid certificate.
       a second, certificate 89 days out. The scheduled run before it failed only
       because it predated the domain answering
 - [ ] `info@healthaali.in` can receive mail — no MX records exist yet
+- [ ] A repository bundle copied somewhere **off this machine** —
+      `npm run backup` writes one, §8; nothing in the repository can make the copy
+      that matters
 - [ ] Google Search Console: the property verified and `sitemap-index.xml`
       submitted — see §7. Nothing about the site's ranking can be measured until
       this exists, because this is the only place the queries it is found for
@@ -223,6 +226,8 @@ below were measured on 1 October 2026.
 | `website/node_modules/` | — | Installed dependencies, reproduced exactly from the committed `package-lock.json` by `npm ci`. |
 | `website/.env`, `.env.local`, `.env.*.local` | — | Secrets and machine-specific overrides. `website/.env.example` documents the variable names and *is* committed. |
 | `/.freebuff/` | — | Local agent tooling state. Nothing about the site depends on it, and it changes on every run. |
+| `/backups/` | 7.2 MB per bundle | Off-machine backups from `npm run backup` (§8). A bundle of the whole history must not live inside the history it duplicates — the point is to copy it elsewhere. |
+| `/.restore-drill/` | — | The scratch clone `npm run backup -- --drill` restores into and builds, to prove the bundle still restores. Removed again on success. |
 | `lighthouse-*.json` | — | Reports from the manual measurement in §6: regenerated on demand, and a number in a file is not a record of anything. |
 | `.DS_Store`, `Thumbs.db`, `Desktop.ini`, `*~` | — | Operating-system cruft, from either operating system. |
 
@@ -457,3 +462,45 @@ and eligible, and the rest is content depth over time and links from elsewhere �
 neither of which a change to this repository can create. And **the recipes are not
 all low-oil or high-protein dishes**; each page states the rule that matched and
 lists what it matched, rather than implying the whole library belongs to it.
+
+## 8. Backing this up, and restoring it
+
+The site is built so that losing everything except the repository loses nothing
+that matters: the dashboard settings are written down in this file, the recipes
+live on YouTube as well as in the committed snapshot, and the built output is
+regenerated on every push. What is left is the code and the writing — and a copy
+of that can sit anywhere.
+
+```bash
+# From website/. Writes ../backups/healthaali-website-<date>.bundle plus a
+# manifest beside it, then verifies the file with git's own check.
+npm run backup
+
+# The same, then the only test that counts: restore that file into a scratch
+# clone, npm ci, full build, and check the topic pages came out of it.
+npm run backup -- --drill
+```
+
+`RESTORE.md` at the repository root is written for whoever finds the file with no
+context — clone, build, re-attach the domain, in four commands and a table of
+what is missing. It travels *inside* the bundle, so a restored clone contains the
+instructions for restoring itself.
+
+A bundle is a `git bundle`: one file holding every commit and every ref, which
+git can clone from as if it were a server. A zip of the working tree would not do
+this — it cannot be cloned, it loses the history that explains every decision in
+it, and whatever was half-edited when it was taken is captured as if it were
+finished.
+
+Four things are deliberately not in it, and each has a different answer:
+
+| Not in the bundle | Why | If it is all you ever have |
+| --- | --- | --- |
+| `/asset/` — 44 MB, 164 files | gitignored input; committing it would take a fresh clone from 7.5 MB to about 52 MB (§4) | the derived images are committed, so the site builds and looks identical — but the sources for new crops, sizes or posts are gone. Copy that folder somewhere off this machine; nothing else does |
+| Pages project, DNS records, the GitHub App grant | dashboard state, described in §1–§3 | recreate from those sections; `npm run check:launch` then verifies the result from the outside |
+| The deployed build | regenerated on push | `npm ci && npm run build` in `website/` |
+| Anything uncommitted | a bundle records commits, not files | this is what the dirty-tree warning is for: the command refuses to drill a working tree with uncommitted changes, so a green run is never mistaken for a complete backup |
+
+**A bundle on the same machine is not a backup,** and the command says so on
+every run. Nothing in this repository can make the copy that matters: the file
+has to leave the laptop — cloud storage, another computer, a USB stick.
