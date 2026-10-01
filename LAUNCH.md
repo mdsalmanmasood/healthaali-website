@@ -426,7 +426,7 @@ puts it in a collection, and a "Cook this way" footer group sitewide.
 
 ### What is verified automatically
 
-`npm run check:seo` (gate 11 of `ci.yml`, and part of `npm run verify`) reads the
+`npm run check:seo` (gate 12 of `ci.yml`, and part of `npm run verify`) reads the
 built HTML and fails on the invariants a review does not keep:
 
 - one `<h1>` per page, a unique `<title>` and meta description, a canonical URL
@@ -510,6 +510,17 @@ news — the writing lands in an ordinary push and the next run tidies up. The
 command is `npm run reminders`, and it is safe to run by hand: `--dry-run` prints
 the plan, `--issues-json` plans offline against a captured issue list, and an open
 issue that names no video in the snapshot is reported rather than closed.
+
+That step carries two invariants of its own, because both are one-line deletions
+away from being undone and neither breaks anything else. It must be un-gated —
+`if: always()` — so a failure earlier in the job cannot skip it: the first
+scheduled run died at the feed with a transient HTTP 404 and every step after it
+was skipped, on a morning when closing a reminder would still have been the right
+thing to do. And the job must grant `issues: write`, or the step is green on every
+quiet run and fails the first morning there is something to open. `npm run
+check:sync-workflow` (gate 7 of `ci.yml`, and part of `npm run verify`) refuses to
+let either go quietly; it reads the step's `run:`, checks every step that invokes
+the reminders, and reads the permissions the job actually inherits.
 
 ### What is not done, and cannot be done from here
 

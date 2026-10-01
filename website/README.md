@@ -77,11 +77,12 @@ Windows: **`preview.bat`** builds first, then serves `dist/`.
 | `npm run check:recipes` | Validate the committed recipe snapshot, offline |
 | `npm run check:blog-links` | Fail when a post links to fewer than two other posts, or is an orphan |
 | `npm run check:blog-dates` | Fail when a post is dated before the video it embeds |
+| `npm run check:sync-workflow` | Fail when the daily sync can no longer open or close its editorial reminders — an un-gated `npm run reminders` step, or no `issues: write` |
 | `npm run check:weight` | Fail when a built page exceeds its gzipped HTML/CSS/JS budget |
 | `npm run check:seo` | One `<h1>`, unique titles and descriptions, canonicals, parseable JSON-LD, and a sitemap that agrees with the build |
 | `npm run report:gaps` | Report the phrases the channel publishes that no post answers, and the thinnest topic pages (a report, not a gate — it always exits 0). The scheduled sync asks the same question about a new video, in its report |
 | `npm run reminders` | Open a labelled issue for every video no post carries, and close the ones that have since been written about (needs the GitHub CLI) |
-| `npm run verify` | `check:recipes` + `check:blog-links` + `check:blog-dates` + `build` + `check:placeholders` + `check:links` + `check:weight` + `check:a11y` — exactly what CI runs |
+| `npm run verify` | The whole chain, in the order `ci.yml` runs it: recipes → blog links → blog dates → the sync guard → build → placeholders → links → weight → SEO → a11y → tests |
 | `npm run assets` | Re-derive every image from the supplied brand kit |
 | `npm run blog:images` | Convert any blog cover artwork to WebP (quality 75) and wire it into the post |
 | `npm run blog:images -- --prompts` | Rewrite `src/assets/blog/PROMPTS.md` from the prompt manifest |
@@ -196,6 +197,36 @@ point it at other files.
 Same reasoning as the link gate for living here rather than in
 `src/data/blog.ts`, and the same reason drafts are skipped.
 
+### The sync's reminder guard — `npm run check:sync-workflow`
+
+[`scripts/check-sync-workflow.mjs`](scripts/check-sync-workflow.mjs) reads
+[`.github/workflows/sync-recipes.yml`](../.github/workflows/sync-recipes.yml) and
+holds two rules about the step that keeps the editorial reminders in the issue
+tracker ([`scripts/editorial-reminders.mjs`](scripts/editorial-reminders.mjs)):
+
+- **It must run even when a step above it failed.** A step with no `if:` runs
+only if everything before it succeeded, and the first thing the sync job does is
+fetch the YouTube feed. That feed answered a transient HTTP 404 on the first
+scheduled run (1 October), which skipped every step after it — including the half
+of the reminders that needs no news at all, closing a reminder whose video a post
+now carries. The step carries `if: always()`, and this gate says so on the next
+push rather than on the morning it matters.
+- **It must be allowed to write issues.** Without `issues: write` every quiet run
+is green and the step fails on the first morning there is something to open — the
+worst day to discover a missing permission.
+
+Neither is visible anywhere else: the site builds, every audit passes, and the
+workflow simply stops doing the thing it was fixed to do. That is why it runs in
+`ci.yml` as well as in `npm run verify` — the edit that would undo it arrives as
+an ordinary push.
+
+It reads the step's `run:` rather than its name, checks every step that invokes
+the reminders, and reads the permissions the job actually inherits: a job's own
+`permissions:` block overrides the workflow's, which is exactly the kind of edit
+that looks harmless in a diff. The rules live in
+[`scripts/lib/sync-workflow.mjs`](scripts/lib/sync-workflow.mjs), where they are
+tested; `--workflow <path>` points it at another file.
+
 ### Accessibility — `npm run check:a11y`
 
 [`scripts/check-a11y.mjs`](scripts/check-a11y.mjs) serves `dist/` itself, walks
@@ -289,7 +320,8 @@ one is a deliberate, reviewable act rather than a quiet edit.
 ### Everything at once
 
 ```bash
-npm run verify   # build → check:placeholders → check:links → check:weight → check:a11y
+npm run verify   # recipes → blog links → blog dates → sync guard → build
+                 # → placeholders → links → weight → SEO → a11y → tests
 ```
 
 ## Project structure
@@ -1055,9 +1087,10 @@ HTTP/1.1 with no compression or HTTP/2 multiplexing.
 pull request targeting `main`, and can be triggered by hand. One job:
 
 ```text
-npm ci → npm run check → npm run check:recipes → npm run build
-       → npm run check:placeholders → npm run check:links
-       → npm run check:weight → npm run check:a11y
+npm ci → npm run check → npm run check:recipes → npm run check:blog-links
+       → npm run check:blog-dates → npm run check:sync-workflow → npm run build
+       → npm run check:placeholders → npm run check:links → npm run check:weight
+       → npm run check:seo → npm run check:a11y → npm run test:launch
 ```
 
 Node 22 is pinned deliberately: [`.nvmrc`](.nvmrc) and `netlify.toml` set the same

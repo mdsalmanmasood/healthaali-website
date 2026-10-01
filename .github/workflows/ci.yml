@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # HealThaali — continuous integration
 #
-# Twelve gates, in the order a failure is cheapest to understand:
+# Thirteen gates, in the order a failure is cheapest to understand:
 #
 #   1. Install       `npm ci` from the committed lockfile
 #   2. Typecheck     `astro check` — TypeScript + template diagnostics
@@ -14,17 +14,21 @@
 #   6. Check blog dates
 #                    no post is dated before the newest video it embeds, and
 #                    every embedded id is one the recipe snapshot knows
-#   7. Check placeholders
+#   7. Check the sync workflow
+#                    the daily sync can still keep a reminder in the issue
+#                    tracker: every step that runs `npm run reminders` survives
+#                    a failure above it, and its job may write issues
+#   8. Check placeholders
 #                    no `[square-bracket]` scaffolding left in any built page
-#   8. Check links   internal link, anchor, sitemap and robots integrity
-#   9. Check weight  no built page may exceed its gzipped HTML/CSS/JS budget
-#  10. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
+#   9. Check links   internal link, anchor, sitemap and robots integrity
+#  10. Check weight  no built page may exceed its gzipped HTML/CSS/JS budget
+#  11. Check a11y    axe-core must find no WCAG A/AA violation, on every page,
 #                    in both the light and the dark colour scheme
-#  11. Check SEO    one <h1> per page, unique titles and descriptions, a
+#  12. Check SEO    one <h1> per page, unique titles and descriptions, a
 #                    canonical URL that agrees with the sitemap, parseable
 #                    JSON-LD whose questions and entries are actually visible,
 #                    and the three topic pages wired into the homepage
-#  12. Test launch   the deep mode of check:launch, against a stub Cloudflare
+#  13. Test launch   the deep mode of check:launch, against a stub Cloudflare
 #                    API. It is the one part of the launch tooling that no
 #                    other step here can reach: it needs a token, and CI has
 #                    no token, so without this it would never run again
@@ -114,6 +118,16 @@ jobs:
       # page cannot support. Both files are named in the failure.
       - name: Check blog dates
         run: npm run check:blog-dates
+
+      # Also source-level, also instant, and the only gate that reads the sync
+      # workflow at all. Two facts in that file are one-line deletions away from
+      # being untrue, and neither changes anything else here: drop the
+      # `if: always()` from its last step and a failed feed skips the reminders
+      # (which is what the feed's HTTP 404 did on 1 October), narrow
+      # `issues: write` and the step fails only on the morning a video needs a
+      # reminder. The site builds and every audit passes either way.
+      - name: Check the sync workflow's reminder guard
+        run: npm run check:sync-workflow
 
       - name: Build the static site
         run: npm run build

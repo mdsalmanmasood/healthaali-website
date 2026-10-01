@@ -22,13 +22,14 @@
     "check:weight": "node scripts/check-weight.mjs",
     "check:blog-links": "node scripts/check-blog-links.mjs",
     "check:blog-dates": "node scripts/check-blog-dates.mjs",
+    "check:sync-workflow": "node scripts/check-sync-workflow.mjs",
     "check:seo": "node scripts/check-seo.mjs",
     "report:gaps": "node scripts/report-gaps.mjs",
     "reminders": "node scripts/editorial-reminders.mjs",
     "backup": "node scripts/backup.mjs",
     "mirror": "node scripts/mirror.mjs",
     "test:launch": "node --test \"scripts/**/*.test.mjs\"",
-    "verify": "npm run check:recipes && npm run check:blog-links && npm run check:blog-dates && npm run build && npm run check:placeholders && npm run check:links && npm run check:weight && npm run check:seo && npm run check:a11y && npm run test:launch",
+    "verify": "npm run check:recipes && npm run check:blog-links && npm run check:blog-dates && npm run check:sync-workflow && npm run build && npm run check:placeholders && npm run check:links && npm run check:weight && npm run check:seo && npm run check:a11y && npm run test:launch",
     "assets": "node scripts/extract-assets.mjs",
     "blog:images": "node scripts/blog-images.mjs",
     "recipes": "node scripts/sync-recipes.mjs"
@@ -40,6 +41,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "axe-core": "^4.13.0",
+    "js-yaml": "^4.3.2",
     "puppeteer-core": "^25.12.0",
     "sharp": "^0.35.5",
     "typescript": "^6.0.3"
