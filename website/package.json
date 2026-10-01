@@ -23,6 +23,7 @@
     "check:blog-links": "node scripts/check-blog-links.mjs",
     "check:blog-dates": "node scripts/check-blog-dates.mjs",
     "check:seo": "node scripts/check-seo.mjs",
+    "report:gaps": "node scripts/report-gaps.mjs",
     "backup": "node scripts/backup.mjs",
     "mirror": "node scripts/mirror.mjs",
     "test:launch": "node --test \"scripts/**/*.test.mjs\"",

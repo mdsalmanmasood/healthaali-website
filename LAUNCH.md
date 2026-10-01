@@ -448,6 +448,38 @@ reason the dish pages carry no invented `Recipe` markup: there is no ingredient
 table and no per-dish calorie count on this site, so claiming a recipe page in
 structured data would describe something that does not exist.
 
+### What to write next — `npm run report:gaps`
+
+Knowing the hubs exist is not the same as knowing where the library is thin.
+That question is a command, run from `website/`:
+
+```bash
+npm run report:gaps            # 30 phrase findings at most
+npm run report:gaps -- --limit 60
+```
+
+It reads the repository rather than the live site. The title and hashtags of
+every video in `src/data/recipes.json` are the corpus of phrases the channel
+publishes; a phrase is a gap when no published post contains it anywhere — its
+title, description, tags or body — which is the generous reading, so what
+survives is something no post has touched at all. Each finding names the videos
+that publish it and says whether any post at least *shows* the video (`shown in 2
+posts` against `no post shows it`), because "no post ever named this" and "no post
+has ever carried this" are different jobs.
+
+The hub table that follows is read from `dist/`, so its counts are the built
+pages' own `CollectionPage` entries rather than a second copy of the rules in
+`src/data/topics.ts` — which also means the build has to exist first. Without a
+`dist/` the phrase findings still run and the hub sections are skipped, naming
+why. Beside the table it lists the dishes no hub rule claims, the tags no hub is
+built on, the posts filed under no hub, and the videos no post embeds.
+
+It is a report, not a gate: it exits 0 however empty the list is, and it is not
+part of `npm run verify` or CI. On the library as it stood on 1 October 2026 it
+reported 10 uncovered phrases out of 63 published, `/no-oil-recipes/` as the
+thinnest hub (5 dishes, 2 posts), one dish no rule claims (the yogurt bowl), and
+one video no post has carried at all (the bangda banana-leaf fry).
+
 ### What is not done, and cannot be done from here
 
 Search Console is the one step with no CLI path, because it authenticates as the

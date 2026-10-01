@@ -78,6 +78,8 @@ Windows: **`preview.bat`** builds first, then serves `dist/`.
 | `npm run check:blog-links` | Fail when a post links to fewer than two other posts, or is an orphan |
 | `npm run check:blog-dates` | Fail when a post is dated before the video it embeds |
 | `npm run check:weight` | Fail when a built page exceeds its gzipped HTML/CSS/JS budget |
+| `npm run check:seo` | One `<h1>`, unique titles and descriptions, canonicals, parseable JSON-LD, and a sitemap that agrees with the build |
+| `npm run report:gaps` | Report the phrases the channel publishes that no post answers, and the thinnest topic pages (a report, not a gate — it always exits 0) |
 | `npm run verify` | `check:recipes` + `check:blog-links` + `check:blog-dates` + `build` + `check:placeholders` + `check:links` + `check:weight` + `check:a11y` — exactly what CI runs |
 | `npm run assets` | Re-derive every image from the supplied brand kit |
 | `npm run blog:images` | Convert any blog cover artwork to WebP (quality 75) and wire it into the post |
