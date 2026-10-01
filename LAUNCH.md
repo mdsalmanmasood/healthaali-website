@@ -399,9 +399,9 @@ way of cooking somebody types into a search box.
 
 | Page | The query it answers | Its entries come from |
 | --- | --- | --- |
-| `/no-oil-recipes` | no-oil recipes, zero-oil cooking, cooking with less oil | dishes whose own published title says "no oil" or "zero oil", plus the post tagged *Zero oil* |
-| `/high-protein-recipes` | high-protein recipes, protein-rich Indian food | dishes whose title says "high protein", plus the six posts tagged *High protein* |
-| `/weight-loss-recipes` | weight-loss recipes, diet recipes | dishes whose title says "weight loss" or "lose weight", plus the four posts tagged *Weight loss* |
+| `/no-oil-recipes` | no-oil recipes, zero-oil cooking, cooking with less oil | dishes whose own published title says "no oil" or "zero oil", plus the two posts tagged *Zero oil* |
+| `/high-protein-recipes` | high-protein recipes, protein-rich Indian food | dishes whose title says "high protein", plus the eight posts tagged *High protein* |
+| `/weight-loss-recipes` | weight-loss recipes, diet recipes | dishes whose title says "weight loss" or "lose weight", plus the five posts tagged *Weight loss* |
 
 **Membership is derived, not curated, and that is the point.** `recipes.json` is
 regenerated from the channel's feed by the daily sync, so a hand-written list of
@@ -441,7 +441,7 @@ built HTML and fails on the invariants a review does not keep:
 - the sitemap and the build agreeing in both directions: every page built is
   listed, and every URL listed exists.
 
-It also **reports** (without failing) the 17 pages whose `<title>` is longer than
+It also **reports** (without failing) the 20 pages whose `<title>` is longer than
 70 characters, which is roughly where a search result cuts it. Most are the
 videos' own titles, kept verbatim because they are the channel's words — the same
 reason the dish pages carry no invented `Recipe` markup: there is no ingredient

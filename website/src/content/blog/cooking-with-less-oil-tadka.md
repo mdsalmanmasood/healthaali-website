@@ -36,6 +36,8 @@ The swap is not "eat boring food". It is "do not pay 200 calories for the textur
 
 A third habit that matters more than either: **preheat properly**. Food that hits a lukewarm pan sticks, and the instinct when it sticks is to add more oil. A properly hot pan plus a well-seasoned or non-stick surface needs a fraction of what a cold one does.
 
+Those techniques are general, and they behave differently in a dosa pan than in a kadai. [The pan-by-pan version](/blog/cooking-without-oil-pan-by-pan) goes through them dish by dish, including the one where we do not claim zero oil at all.
+
 <figure class="yt-embed" data-yt="ozAG3_JR3_0" data-yt-title="No-oil pepper soya chicken, cooked in one pan" data-yt-shape="vertical">
   <a class="yt-embed__fallback" href="https://www.youtube.com/shorts/ozAG3_JR3_0" target="_blank" rel="noopener noreferrer">
     Watch “No-oil pepper soya chicken” on YouTube

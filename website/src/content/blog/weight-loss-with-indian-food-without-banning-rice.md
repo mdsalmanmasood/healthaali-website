@@ -8,7 +8,7 @@ tags: ["Weight loss", "Indian food", "Meal planning"]
 
 There are two ways we see this go wrong, and they look like opposites.
 
-The first is the crash: rice out, roti out, everything boiled, results for three weeks, and then a normal family dinner at the second month mark and it all comes back. The second is quieter and more common — eating "healthy" for two months with nothing to show for it, because the food improved and the quantity did not change.
+The first is the crash: rice out, roti out, everything boiled, results for three weeks, and then a normal family dinner at the second month mark and it all comes back. The second is quieter and more common — eating "healthy" for two months with nothing to show for it, because the food improved and the quantity did not change. [Four explanations worth checking](/blog/eating-healthy-not-losing-weight) is the post that second failure mode turned into.
 
 Both come from the same place: changing the wrong thing first. So here is the order we would work in.
 
@@ -45,7 +45,7 @@ What usually happens when people cut rice is that the calories come back somewhe
 
 ## Snacks decide more than dinner
 
-The single most reliable pattern in a food log is a good day undone between 5 and 8 in the evening. Not by a big meal — by a packet, twice.
+The single most reliable pattern in a food log is a good day undone between 5 and 8 in the evening. Not by a big meal — by a packet, twice. That hour gets [its own post](/blog/high-protein-evening-snacks), because it fails for a different reason than dinner does.
 
 The fix is not willpower. It is having something on hand that is genuinely satisfying, which in practice means protein and fibre rather than sugar and salt. A boiled chana chaat with onion, tomato and lemon does that job in about five minutes, and it is the snack in the video below.
 

@@ -54,7 +54,7 @@ Two things decide the outcome, and both are about water:
 
 - **Cook them in something wet and spiced.** Onion, tomato, ginger, garlic, chilli — a base with a sauce in it, so the piece has something to absorb. Dry masala tossed with soya stays bland.
 - **Or grind them.** Soak, squeeze, and pulse to a coarse mince. Now they behave like keema: they bind with an egg or with oats, take a crust on a tawa, and stop being recognisable as soya at all. This is the trick that turns soya chunks from a chore into a fast breakfast, and it is exactly what the cheela below does.
-- **Keep the oil out of the equation.** The one place soya is worse than paneer is its dryness, which tempts people into frying it. A non-stick pan, a wet base and a squeeze of lemon does more for it than oil, and [oil is the easiest calorie in the kitchen to spend without noticing](/blog/cooking-with-less-oil-tadka).
+- **Keep the oil out of the equation.** The one place soya is worse than paneer is its dryness, which tempts people into frying it. A non-stick pan, a wet base and a squeeze of lemon does more for it than oil, and [oil is the easiest calorie in the kitchen to spend without noticing](/blog/cooking-with-less-oil-tadka) — [the pan-by-pan version](/blog/cooking-without-oil-pan-by-pan) has what that means for each dish.
 
 <figure class="yt-embed" data-yt="xcvxfjo58Mo" data-yt-title="A high-protein cheela made from ground soya chunks, oats, eggs and vegetables" data-yt-shape="vertical">
   <a class="yt-embed__fallback" href="https://www.youtube.com/shorts/xcvxfjo58Mo" target="_blank" rel="noopener noreferrer">
@@ -88,7 +88,7 @@ There is also the honest limitation that no one likes to print: it will never ta
 
 ## How it fits a week
 
-We use them two or three times a week, mostly because rotation is what keeps a kitchen interesting rather than because there is a limit to hit. A 50 g portion in a main dish carries about 26 g of protein, so a meal built on soya plus a katori of dal and a chapati is comfortably over 35 g — the arithmetic that most Indian plates are short on, which is [the protein question this whole series starts from](/blog/how-much-protein-do-you-need-indian-diet).
+We use them two or three times a week, mostly because rotation is what keeps a kitchen interesting rather than because there is a limit to hit. If the question you arrived with is which of the four kitchen proteins to lean on rather than what to do with soya, [this comparison answers it by the serving](/blog/paneer-eggs-dal-soya-which-protein). A 50 g portion in a main dish carries about 26 g of protein, so a meal built on soya plus a katori of dal and a chapati is comfortably over 35 g — the arithmetic that most Indian plates are short on, which is [the protein question this whole series starts from](/blog/how-much-protein-do-you-need-indian-diet).
 
 They also carry fibre, about 6 g in a 50 g portion, which is unusual for a protein: chicken and paneer bring none. That makes them one of the few additions that help both numbers at once — worth knowing if [the fibre side of the day](/blog/fibre-in-an-indian-diet) is where yours falls short.
 

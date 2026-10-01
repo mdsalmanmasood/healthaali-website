@@ -73,7 +73,7 @@ What does not work is adding ghee or a second tadka. Fat is not protein, and it 
 
 ## When dal is not enough
 
-Pulses are a good answer to a moderate protein target and a poor answer to a high one. If you are aiming at 100 g a day, you are looking at six or seven katoris of thick dal, which nobody eats. That is why anyone training seriously ends up adding eggs, paneer, soya, fish or chicken, and it is not a failure of the dal.
+Pulses are a good answer to a moderate protein target and a poor answer to a high one. If you are aiming at 100 g a day, you are looking at six or seven katoris of thick dal, which nobody eats. That is why anyone training seriously ends up adding eggs, paneer, soya, fish or chicken, and it is not a failure of the dal — [which of those four to lean on](/blog/paneer-eggs-dal-soya-which-protein) is the comparison we keep coming back to.
 
 One more limit worth stating plainly: if you have kidney disease, gout, or a condition that changes how much protein or purine you should eat, the useful number is the one your doctor gives you, not the one in this table. A general post about pulses is the wrong place to get that answer.
 
