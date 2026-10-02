@@ -77,12 +77,12 @@ Windows: **`preview.bat`** builds first, then serves `dist/`.
 | `npm run check:recipes` | Validate the committed recipe snapshot, offline |
 | `npm run check:blog-links` | Fail when a post links to fewer than two other posts, or is an orphan |
 | `npm run check:blog-dates` | Fail when a post is dated before the video it embeds |
-| `npm run check:sync-workflow` | Fail when the daily sync can no longer open or close its editorial reminders — an un-gated `npm run reminders` step, or no `issues: write` |
+| `npm run check:sync-workflow` | Fail when any file in `.github/workflows` is not a workflow GitHub can run (broken YAML, or no jobs), or when the daily sync can no longer open or close its editorial reminders — an un-gated `npm run reminders` step, or no `issues: write` |
 | `npm run check:weight` | Fail when a built page exceeds its gzipped HTML/CSS/JS budget |
 | `npm run check:seo` | One `<h1>`, unique titles and descriptions, canonicals, parseable JSON-LD, and a sitemap that agrees with the build |
 | `npm run report:gaps` | Report the phrases the channel publishes that no post answers, and the thinnest topic pages (a report, not a gate — it always exits 0). The scheduled sync asks the same question about a new video, in its report |
 | `npm run reminders` | Open a labelled issue for every video no post carries, and close the ones that have since been written about (needs the GitHub CLI) |
-| `npm run verify` | The whole chain, in the order `ci.yml` runs it: recipes → blog links → blog dates → the sync guard → build → placeholders → links → weight → SEO → a11y → tests |
+| `npm run verify` | The whole chain, in the order `ci.yml` runs it: recipes → blog links → blog dates → workflows → build → placeholders → links → weight → SEO → a11y → tests |
 | `npm run assets` | Re-derive every image from the supplied brand kit |
 | `npm run blog:images` | Convert any blog cover artwork to WebP (quality 75) and wire it into the post |
 | `npm run blog:images -- --prompts` | Rewrite `src/assets/blog/PROMPTS.md` from the prompt manifest |
@@ -197,12 +197,25 @@ point it at other files.
 Same reasoning as the link gate for living here rather than in
 `src/data/blog.ts`, and the same reason drafts are skipped.
 
-### The sync's reminder guard — `npm run check:sync-workflow`
+### The workflows — `npm run check:sync-workflow`
 
-[`scripts/check-sync-workflow.mjs`](scripts/check-sync-workflow.mjs) reads
-[`.github/workflows/sync-recipes.yml`](../.github/workflows/sync-recipes.yml) and
-holds two rules about the step that keeps the editorial reminders in the issue
-tracker ([`scripts/editorial-reminders.mjs`](scripts/editorial-reminders.mjs)):
+[`scripts/check-sync-workflow.mjs`](scripts/check-sync-workflow.mjs) does two
+things, and the first is why a workflow can never disappear quietly.
+
+**It parses every file in `.github/workflows`.** A workflow whose YAML does not
+load is not a broken build — it is nothing at all: GitHub ignores the file, the
+Actions tab never lists it, and no other gate here opens it. The default branch
+would carry a workflow that cannot run until the morning it was supposed to do
+something, and by then the edit is weeks old. Every `.yml`/`.yaml` file directly
+in the directory is therefore loaded and must hold at least one job, and the
+report names every file it read, so a workflow that stops being seen is visible
+too. The rules live in [`scripts/lib/workflows.mjs`](scripts/lib/workflows.mjs),
+where they are tested. Hidden names and non-YAML files are left alone: those are
+the filesystem's or the editor's, not GitHub's.
+
+**It holds two rules about the step that keeps the editorial reminders in the
+issue tracker** ([`scripts/editorial-reminders.mjs`](scripts/editorial-reminders.mjs)),
+in [`.github/workflows/sync-recipes.yml`](../.github/workflows/sync-recipes.yml):
 
 - **It must run even when a step above it failed.** A step with no `if:` runs
 only if everything before it succeeded, and the first thing the sync job does is
@@ -223,9 +236,10 @@ an ordinary push.
 It reads the step's `run:` rather than its name, checks every step that invokes
 the reminders, and reads the permissions the job actually inherits: a job's own
 `permissions:` block overrides the workflow's, which is exactly the kind of edit
-that looks harmless in a diff. The rules live in
+that looks harmless in a diff. The guard's rules live in
 [`scripts/lib/sync-workflow.mjs`](scripts/lib/sync-workflow.mjs), where they are
-tested; `--workflow <path>` points it at another file.
+tested; `--workflow <path>` points the guard at another file, while the sweep
+always covers the real directory.
 
 ### Accessibility — `npm run check:a11y`
 
@@ -320,7 +334,7 @@ one is a deliberate, reviewable act rather than a quiet edit.
 ### Everything at once
 
 ```bash
-npm run verify   # recipes → blog links → blog dates → sync guard → build
+npm run verify   # recipes → blog links → blog dates → workflows → build
                  # → placeholders → links → weight → SEO → a11y → tests
 ```
 
@@ -375,9 +389,14 @@ scripts/
 └── check-a11y.mjs        WCAG A/AA audit of the built site (axe-core)
 ```
 
-The two workflows live one level up, in `.github/workflows/`:
-[`ci.yml`](../.github/workflows/ci.yml) (checks every push and pull request) and
-[`sync-recipes.yml`](../.github/workflows/sync-recipes.yml) (the scheduled recipe sync).
+The workflows live one level up, in `.github/workflows/`:
+[`ci.yml`](../.github/workflows/ci.yml) (every push and pull request),
+[`sync-recipes.yml`](../.github/workflows/sync-recipes.yml) (the scheduled recipe
+sync), [`launch-check.yml`](../.github/workflows/launch-check.yml) (the scheduled
+launch-state check), [`uptime.yml`](../.github/workflows/uptime.yml) (the live
+site probe) and [`mirror.yml`](../.github/workflows/mirror.yml) (the copy on a
+second host). `npm run check:sync-workflow` parses all five on every push: a
+workflow GitHub cannot read never runs and never says so.
 
 ## Asset pipeline
 

@@ -520,7 +520,9 @@ thing to do. And the job must grant `issues: write`, or the step is green on eve
 quiet run and fails the first morning there is something to open. `npm run
 check:sync-workflow` (gate 7 of `ci.yml`, and part of `npm run verify`) refuses to
 let either go quietly; it reads the step's `run:`, checks every step that invokes
-the reminders, and reads the permissions the job actually inherits.
+the reminders, and reads the permissions the job actually inherits. It also parses
+every file in `.github/workflows`, so a workflow whose YAML no longer loads fails
+the push instead of never running at all.
 
 ### What is not done, and cannot be done from here
 

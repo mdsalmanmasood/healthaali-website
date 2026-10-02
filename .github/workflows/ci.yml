@@ -14,10 +14,12 @@
 #   6. Check blog dates
 #                    no post is dated before the newest video it embeds, and
 #                    every embedded id is one the recipe snapshot knows
-#   7. Check the sync workflow
-#                    the daily sync can still keep a reminder in the issue
-#                    tracker: every step that runs `npm run reminders` survives
-#                    a failure above it, and its job may write issues
+#   7. Check workflows
+#                    every file in `.github/workflows` is YAML GitHub can parse
+#                    and holds at least one job, and the daily sync can still
+#                    keep a reminder in the issue tracker: every step that runs
+#                    `npm run reminders` survives a failure above it, and its
+#                    job may write issues
 #   8. Check placeholders
 #                    no `[square-bracket]` scaffolding left in any built page
 #   9. Check links   internal link, anchor, sitemap and robots integrity
@@ -119,14 +121,15 @@ jobs:
       - name: Check blog dates
         run: npm run check:blog-dates
 
-      # Also source-level, also instant, and the only gate that reads the sync
-      # workflow at all. Two facts in that file are one-line deletions away from
-      # being untrue, and neither changes anything else here: drop the
-      # `if: always()` from its last step and a failed feed skips the reminders
-      # (which is what the feed's HTTP 404 did on 1 October), narrow
-      # `issues: write` and the step fails only on the morning a video needs a
-      # reminder. The site builds and every audit passes either way.
-      - name: Check the sync workflow's reminder guard
+      # Also source-level, instant, and the only gate that opens .github/workflows
+      # at all. A workflow GitHub cannot parse never runs and never says so — it is
+      # simply absent from the Actions tab — so every file in that directory is
+      # parsed here and must hold a job. Two facts about the sync's reminder step
+      # are also one-line deletions away from being untrue: drop `if: always()` and
+      # a failed feed skips the reminders (which is what the feed's HTTP 404 did on
+      # 1 October), narrow `issues: write` and the step fails only on the morning a
+      # video needs a reminder. The site builds and every audit passes either way.
+      - name: Check the workflows and the sync's reminder guard
         run: npm run check:sync-workflow
 
       - name: Build the static site
