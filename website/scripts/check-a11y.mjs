@@ -277,7 +277,14 @@ async function main() {
   }
 
   const files = await walk(DIST);
-  const htmlFiles = files.filter((file) => file.toLowerCase().endsWith(".html"));
+  /* A Google site-verification file is machine text, not a page: its bytes are
+     dictated by Search Console, so auditing it for titles and lang attributes
+     can only fail. Matched exactly (google + 16 hex digits), as in check-seo. */
+  const htmlFiles = files.filter(
+    (file) =>
+      file.toLowerCase().endsWith(".html") &&
+      !/^google[0-9a-f]{16}\.html$/i.test(path.basename(file))
+  );
   if (htmlFiles.length === 0) fail(`No HTML files in ${DIST} — run "npm run build".`);
 
   /** Page routes, discovered from the build so new pages are covered for free. */

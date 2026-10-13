@@ -170,7 +170,16 @@ async function main() {
 
   const files = await walk(DIST);
   /* 404 is served for any unknown path and is deliberately noindex and uncountable. */
-  const pageFiles = files.filter((file) => file.endsWith(".html") && path.basename(file) !== "404.html");
+  /* A Google site-verification file is not a page either: its bytes are dictated
+     by Search Console and must not gain a title or an <h1>, and it must stay out
+     of the sitemap. The name is matched exactly (google + 16 hex digits) so no
+     real page can hide behind this. */
+  const pageFiles = files.filter(
+    (file) =>
+      file.endsWith(".html") &&
+      path.basename(file) !== "404.html" &&
+      !/^google[0-9a-f]{16}\.html$/.test(path.basename(file))
+  );
 
   const pages = await Promise.all(
     pageFiles.sort().map(async (file) => readPage(file, await readFile(file, "utf8"))),
