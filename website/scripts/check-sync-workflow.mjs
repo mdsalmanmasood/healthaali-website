@@ -10,10 +10,12 @@
  * that YAML cannot load is not a broken build — it is nothing at all: GitHub
  * ignores it, the Actions tab does not list it, and no other gate in this
  * repository opens the file. Nobody notices until the morning the workflow was
- * supposed to do something, which is weeks after the edit that broke it. So
- * every `.yml`/`.yaml` file directly in the directory is parsed here and must
- * hold at least one job. That rule lives in `lib/workflows.mjs`, where it is
- * tested.
+ * supposed to do something, which is weeks after the edit that broke it. A file
+ * with jobs but no `on:` is the same failure one line further in: GitHub lists it
+ * as invalid, and nothing — no push, no schedule, no hand dispatch — can ever
+ * start it. So every `.yml`/`.yaml` file directly in the directory is parsed
+ * here and must hold at least one job and at least one trigger. That rule lives
+ * in `lib/workflows.mjs`, where it is tested.
  *
  * **`.github/workflows/sync-recipes.yml` must still be able to keep its
  * editorial reminders alive.** The workflow's last step opens a labelled issue
@@ -37,19 +39,21 @@
  * push, which is exactly the event `verify` alone never sees.
  *
  * What it asserts, exactly: every file directly in `.github/workflows` is YAML
- * that loads into a mapping with at least one job, and every step in the sync
- * workflow whose `run` invokes `npm run reminders` has an `if:` that survives a
- * failure while its job is granted `issues: write`. The decisions live in
+ * that loads into a mapping with at least one job and a trigger, and every step
+ * in the sync workflow whose `run` invokes `npm run reminders` has an `if:` that
+ * survives a failure while its job is granted `issues: write`. The decisions live in
  * `lib/workflows.mjs` and `lib/sync-workflow.mjs`, where they are tested; this
  * file reads the files, prints the verdict and exits.
  *
- * Deliberately not asserted: any other workflow's triggers, permissions or
- * steps (a file GitHub would also reject at run time is a loud failure, not this
- * one), the sync's `schedule` trigger (a manual-only sync would be a different,
- * visible problem), and the `GH_TOKEN` the reminder step needs (its absence
- * fails loudly the moment it runs, unlike a permission). `--workflow <path>`
- * moves the reminder guard to another file; the sweep always covers the real
- * directory.
+ * Deliberately not asserted: whether a trigger is one GitHub knows and what it
+ * carries, any workflow's permissions beyond the reminder step's, and any
+ * steps beyond the reminders (a file GitHub would also reject at run time is a
+ * loud failure, not this one). The sweep requires that the sync still has some
+ * trigger, not that it is the schedule — a manual-only sync would be a
+ * different, visible choice. Nor is the `GH_TOKEN` the reminder step needs (its
+ * absence fails loudly the moment it runs, unlike a permission). `--workflow
+ * <path>` moves the reminder guard to another file; the sweep always covers the
+ * real directory.
  *
  * Exit code 0 = every workflow runs and the guard is intact, 1 = it is not, or a
  * file could not be read.
@@ -80,10 +84,12 @@ if (argv.includes("--help")) {
   console.log(
     "\n  npm run check:sync-workflow [-- --workflow <path>]\n\n" +
       "  Parses every .yml/.yaml file in .github/workflows, so a workflow GitHub\n" +
-      "  could not run — broken YAML, no jobs — fails here instead of going silent\n" +
-      "  in the Actions tab. Then asserts that every step of the sync workflow\n" +
-      "  which runs `npm run reminders` survives a failed step above it, and that\n" +
-      "  its job may write the issues it needs.\n\n" +
+      "  could not run — broken YAML, no jobs, no trigger — fails here instead of\n" +
+      "  going silent in the Actions tab.\n" +
+      "\n" +
+      "  Then asserts that every step of the sync workflow which runs\n" +
+      "  `npm run reminders` survives a failed step above it, and that its job may\n" +
+      "  write the issues it needs.\n\n" +
       "  --workflow <path>  the file the reminder guard applies to, resolved from\n" +
       "                     the repository root, not the working directory\n" +
       "                     (default: .github/workflows/sync-recipes.yml).\n" +
@@ -236,10 +242,10 @@ if (problems.length > 0) {
   }
   console.error(
     "  GitHub reads `.github/workflows` at push time: a file it cannot parse, or one\n" +
-      "  with no jobs, never appears in the Actions tab and never says anything — and\n" +
-      "  the sync's reminder step is one line away from being skipped on the morning\n" +
-      "  it matters. See scripts/editorial-reminders.mjs for what that step does, and\n" +
-      "  lib/workflows.mjs + lib/sync-workflow.mjs for the rules enforced here.\n"
+      "  with no jobs or no trigger, never appears in the Actions tab and never says\n" +
+      "  anything — and the sync's reminder step is one line away from being skipped\n" +
+      "  on the morning it matters. See scripts/editorial-reminders.mjs for what that\n" +
+      "  step does, and lib/workflows.mjs + lib/sync-workflow.mjs for these rules.\n"
   );
   process.exit(1);
 }

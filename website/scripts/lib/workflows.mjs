@@ -17,10 +17,10 @@
  * reminder guard applies to a particular file is the caller's decision; this
  * module's only question is whether each file is one GitHub could run at all.
  *
- * Deliberately not asserted: the triggers a workflow needs, its permissions, and
- * anything its steps are supposed to do. A file with jobs that GitHub would still
- * reject at run time is a different, louder failure — this module is about the
- * ones that leave no trace anywhere.
+ * Deliberately not asserted: whether a trigger is one GitHub knows and what it
+ * carries, a workflow's permissions, and anything its steps are supposed to do.
+ * A file with jobs that GitHub would still reject at run time is a different,
+ * louder failure — this module is about the ones that leave no trace anywhere.
  */
 
 import yaml from "js-yaml";
@@ -44,6 +44,33 @@ export const WORKFLOW_DIR = ".github/workflows";
 export const isWorkflowFile = (name) =>
   typeof name === "string" && !name.startsWith(".") && /\.ya?ml$/.test(name);
 
+/**
+ * Whether the document carries at least one trigger.
+ *
+ * GitHub refuses a workflow whose `on:` is missing or empty, and the refusal is
+ * of the same quiet kind as a file that does not parse: the workflow is listed
+ * as invalid and can never be started by anything, by hand or on a schedule.
+ *
+ * GitHub accepts three shapes and this accepts each of them when it is not
+ * empty — an event name (`on: push`), a list of them
+ * (`on: [push, pull_request]`), or a mapping of event to configuration
+ * (`on: { push: { branches: [main] }, schedule: [{ cron: "0 3 * * *" }] }`).
+ * An absent, null, blank, empty-list or empty-mapping value is none of those, and
+ * GitHub would never run the file.
+ *
+ * Only the shape is read. Whether `pushh` is a real event or a `schedule:` list
+ * carries a valid cron is GitHub's judgment at run time, and it is a loud one —
+ * this module is about the trigger that isn't there at all.
+ */
+export const hasTrigger = (workflow) => {
+  const on = workflow?.on;
+
+  if (typeof on === "string") return on.trim() !== "";
+  if (Array.isArray(on)) return on.length > 0;
+  if (on && typeof on === "object") return Object.keys(on).length > 0;
+  return false;
+};
+
 /** What a parsed YAML document actually is, for a message that has to say so. */
 const describe = (value) => {
   if (Array.isArray(value)) return "a list";
@@ -58,10 +85,11 @@ const describe = (value) => {
  * only a label, echoed back on each problem so the caller can name the file.
  *
  * A source is a workflow when it loads as YAML into a mapping with at least one
- * job. Anything else is a problem, because anything else is a file GitHub would
- * refuse or ignore — and either way it never runs. Every source is judged on its
- * own: one broken file does not stop the others from being read, so one push
- * reports every workflow it broke rather than the first.
+ * job and at least one trigger. Anything else is a problem, because anything
+ * else is a file GitHub would refuse or ignore — and either way it never runs.
+ * Every source is judged on its own: one broken file does not stop the others
+ * from being read, so one push reports every workflow it broke rather than the
+ * first.
  */
 export function parseWorkflows(files) {
   const workflows = [];
@@ -99,6 +127,19 @@ export function parseWorkflows(files) {
             "would never run it"
           : `parses to ${describe(workflow)} rather than a workflow, so GitHub would ` +
             "never run it",
+      });
+      continue;
+    }
+
+    if (!hasTrigger(workflow)) {
+      problems.push({
+        id: "no-trigger",
+        path,
+        message:
+          "has jobs but no usable `on:` trigger, so nothing can ever start it — " +
+          "GitHub would list the file as invalid and never run it. Give it at " +
+          "least one event: `on: push`, `on: [push, schedule]`, or a mapping of " +
+          "events to their configuration.",
       });
       continue;
     }

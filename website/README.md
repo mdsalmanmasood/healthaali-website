@@ -77,7 +77,7 @@ Windows: **`preview.bat`** builds first, then serves `dist/`.
 | `npm run check:recipes` | Validate the committed recipe snapshot, offline |
 | `npm run check:blog-links` | Fail when a post links to fewer than two other posts, or is an orphan |
 | `npm run check:blog-dates` | Fail when a post is dated before the video it embeds |
-| `npm run check:sync-workflow` | Fail when any file in `.github/workflows` is not a workflow GitHub can run (broken YAML, or no jobs), or when the daily sync can no longer open or close its editorial reminders — an un-gated `npm run reminders` step, or no `issues: write` |
+| `npm run check:sync-workflow` | Fail when any file in `.github/workflows` is not a workflow GitHub can run (broken YAML, no jobs, no trigger), or when the daily sync can no longer open or close its editorial reminders — an un-gated `npm run reminders` step, or no `issues: write` |
 | `npm run check:weight` | Fail when a built page exceeds its gzipped HTML/CSS/JS budget |
 | `npm run check:seo` | One `<h1>`, unique titles and descriptions, canonicals, parseable JSON-LD, and a sitemap that agrees with the build |
 | `npm run report:gaps` | Report the phrases the channel publishes that no post answers, and the thinnest topic pages (a report, not a gate — it always exits 0). The scheduled sync asks the same question about a new video, in its report |
@@ -204,14 +204,17 @@ things, and the first is why a workflow can never disappear quietly.
 
 **It parses every file in `.github/workflows`.** A workflow whose YAML does not
 load is not a broken build — it is nothing at all: GitHub ignores the file, the
-Actions tab never lists it, and no other gate here opens it. The default branch
-would carry a workflow that cannot run until the morning it was supposed to do
-something, and by then the edit is weeks old. Every `.yml`/`.yaml` file directly
-in the directory is therefore loaded and must hold at least one job, and the
-report names every file it read, so a workflow that stops being seen is visible
-too. The rules live in [`scripts/lib/workflows.mjs`](scripts/lib/workflows.mjs),
-where they are tested. Hidden names and non-YAML files are left alone: those are
-the filesystem's or the editor's, not GitHub's.
+Actions tab never lists it, and no other gate here opens it. So is a workflow
+with jobs but no `on:`: GitHub lists it as invalid, and nothing — not a push, not
+a schedule, not a hand dispatch — can ever start it. Either way the default
+branch would carry a workflow that cannot run until the morning it was supposed
+to do something, and by then the edit is weeks old. Every `.yml`/`.yaml` file
+directly in the directory is therefore loaded and must hold at least one job and
+at least one trigger, and the report names every file it read, so a workflow that
+stops being seen is visible too. The rules live in
+[`scripts/lib/workflows.mjs`](scripts/lib/workflows.mjs), where they are tested.
+Hidden names and non-YAML files are left alone: those are the filesystem's or the
+editor's, not GitHub's.
 
 **It holds two rules about the step that keeps the editorial reminders in the
 issue tracker** ([`scripts/editorial-reminders.mjs`](scripts/editorial-reminders.mjs)),

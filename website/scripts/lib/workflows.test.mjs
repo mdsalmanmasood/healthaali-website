@@ -3,21 +3,23 @@
  *
  * The contract is small and entirely about the edge between "a file GitHub
  * runs" and "a file GitHub never mentions again": the extensions it reads, and
- * what a source has to load into for there to be a workflow in it at all.
+ * what a source has to load into — a job *and* a trigger — for there to be a
+ * workflow in it at all.
  *
  * Every case here is a source string, because that is all the module reads —
  * there is no fixture directory to keep in step with the tests, and no chance of
  * a test passing because the file on disk happened to change.
  *
- * The case worth reading twice is the last: a workflow with jobs but no `on:` is
- * accepted on purpose. GitHub would refuse it at run time, loudly, in the
- * Actions tab. This gate exists for the files that say nothing.
+ * The rule that matters most is the trigger one: a workflow with jobs but no
+ * `on:` is listed as invalid by GitHub and can never be started — no push, no
+ * schedule, no hand dispatch. It is the same silent failure as broken YAML, one
+ * line further in.
  */
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { isWorkflowFile, parseWorkflows } from "./workflows.mjs";
+import { hasTrigger, isWorkflowFile, parseWorkflows } from "./workflows.mjs";
 
 /** A workflow-shaped source, minimal but real. */
 const GOOD = [
@@ -61,6 +63,26 @@ describe("isWorkflowFile", () => {
   it("does not treat a missing name as a workflow", () => {
     assert.equal(isWorkflowFile(undefined), false);
     assert.equal(isWorkflowFile(null), false);
+  });
+});
+
+describe("hasTrigger", () => {
+  it("accepts every shape GitHub accepts, when it is not empty", () => {
+    assert.equal(hasTrigger({ on: "push" }), true);
+    assert.equal(hasTrigger({ on: ["push", "pull_request"] }), true);
+    assert.equal(hasTrigger({ on: { push: { branches: ["main"] } } }), true);
+    assert.equal(hasTrigger({ on: { schedule: [{ cron: "0 3 * * *" }] } }), true);
+  });
+
+  it("reads an absent or empty trigger as no trigger at all", () => {
+    assert.equal(hasTrigger({}), false);
+    assert.equal(hasTrigger(undefined), false);
+    assert.equal(hasTrigger({ on: null }), false);
+    assert.equal(hasTrigger({ on: "" }), false);
+    assert.equal(hasTrigger({ on: "   " }), false);
+    assert.equal(hasTrigger({ on: [] }), false);
+    assert.equal(hasTrigger({ on: {} }), false);
+    assert.equal(hasTrigger({ on: true }), false);
   });
 });
 
@@ -139,12 +161,32 @@ describe("parseWorkflows", () => {
     );
   });
 
-  it("accepts a workflow with jobs but no on:, which GitHub rejects loudly, not silently", () => {
-    const { workflows, problems } = parseWorkflows([
-      { path: "quiet.yml", source: "jobs:\n  build:\n    steps:\n      - run: echo hi\n" },
-    ]);
+  it("accepts each trigger shape GitHub accepts, once jobs are there", () => {
+    const triggers = ["on: push\n", "on: [push, schedule]\n", "on:\n  push:\n    branches: [main]\n"];
 
-    assert.deepEqual(problems, []);
-    assert.equal(workflows.length, 1);
+    for (const on of triggers) {
+      const { workflows, problems } = parseWorkflows([
+        { path: "triggered.yml", source: `${on}jobs:\n  build:\n    steps:\n      - run: echo hi\n` },
+      ]);
+
+      assert.deepEqual(problems, [], JSON.stringify(on));
+      assert.equal(workflows.length, 1, JSON.stringify(on));
+    }
+  });
+
+  it("fails a workflow with jobs but no trigger, which nothing could ever start", () => {
+    const problem = onlyProblem("jobs:\n  build:\n    steps:\n      - run: echo hi\n");
+
+    assert.equal(problem.id, "no-trigger");
+    assert.match(problem.message, /no usable `on:` trigger/);
+  });
+
+  it("fails a trigger that is there and empty, whatever shape the emptiness has", () => {
+    const jobs = "jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo hi\n";
+
+    for (const on of ["on:\n", 'on: ""\n', "on: []\n", "on: {}\n", "on: null\n"]) {
+      const problem = onlyProblem(`${on}${jobs}`);
+      assert.equal(problem.id, "no-trigger", JSON.stringify(on));
+    }
   });
 });
