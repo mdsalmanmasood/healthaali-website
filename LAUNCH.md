@@ -26,7 +26,10 @@ valid certificate.
       `40f8b0c`, is the first run to pass: all four paths 200 in under a third of
       a second, certificate 89 days out. The scheduled run before it failed only
       because it predated the domain answering
-- [ ] `info@healthaali.in` can receive mail — no MX records exist yet
+- [x] `info@healthaali.in` can receive mail — a message sent from an outside
+      mailbox (the owner's Gmail) arrived in the Zoho inbox on 3 October 2026 at
+      12:50 AM, and Zoho's dashboard counts it as 1 incoming email. Zoho's own
+      counters now read MX 1/1, SPF 1/1, DKIM 1/1 (§2)
 - [ ] A repository bundle copied somewhere **off this machine** —
       `npm run backup` writes one, §8; nothing in the repository can make the copy
       that matters
@@ -62,8 +65,8 @@ themselves too — see §5.
   hold` is invisible in the dashboard's normal view and total in effect.
 - Since the nameserver change, **DNS is edited in Cloudflare only**; GoDaddy's
   DNS page is read-only for this domain.
-- Decline the upsells: *Connect Email* (use Cloudflare Email Routing instead) and
-  the domain protection plans.
+- Decline the upsells: *Connect Email* (mail is Zoho Mail, §2) and the domain
+  protection plans.
 
 ## 2. Cloudflare zone — `healthaali.in`
 
@@ -90,9 +93,89 @@ Proxying must stay on: Pages serves these hostnames through Cloudflare's edge,
 and the certificate is issued on the zone. There is no origin server, so no `A`
 or `AAAA` record belongs on the apex.
 
-**Mail:** there are no `MX` or `TXT` records, so `info@healthaali.in` — the
-address the site publishes — cannot receive mail yet. Cloudflare Email Routing
-(free) fixes it when you are ready.
+### Mail — Zoho Mail, configured and verified 3 October 2026
+
+`info@healthaali.in` is the only address the site publishes (`/contact`,
+`/privacy`, `/terms`, `/delete-account`, the footer) and the address the
+recipe-sync bot commits as. Until 3 October 2026 the zone had no `MX` record, so
+every "email us" link on the live site was a dead letter. It is now hosted by
+**Zoho Mail** on the **India** data centre (`mailadmin.zoho.in`), under the
+organisation **HealThaali**, on the **Mail Free** plan: up to 5 users, 5 GB
+each, one domain, web and the Zoho mobile app only. There is no IMAP/POP/
+ActiveSync on this plan, so Outlook, Apple Mail and the built-in iPhone/Android
+mail apps cannot read it — that needs Mail Lite at ₹59/user/month billed
+annually.
+
+**Two mailboxes, not one.** Signup silently rewrote the Super Administrator
+from the `admin@` that was asked for to `info@`, so for a while the address
+printed on every page of the site was also the full-control domain login — and
+it is public, and it is what the recipe-sync bot commits as. On 3 October 2026
+`admin@healthaali.in` was added (User ID 60090564098) and the Super
+Administrator role was transferred to it, which is the part that matters.
+`info@` still receives everything the site collects and is the only address
+published anywhere.
+
+- [ ] Demote `info@` from **Administrator** to **User**. It is no longer Super
+      Administrator, but Zoho only lets the Super Administrator change a role,
+      so the last step has to be done from an `admin@` session: sign in at
+      <https://mailadmin.zoho.in>, then Users → `info@healthaali.in` →
+      *Change role* → **User**. The credentials for that session were mailed to
+      `info@` itself ("Your new Zoho Mail account details", from
+      `noreply@zoho.in`) with *force change on first log in* set, so the first
+      login also sets the real password — which is why it was left for a human
+      rather than done automatically, to keep that password out of any log.
+
+Domain ownership is verified and the `info@healthaali.in` mailbox is active.
+These records were added to the Cloudflare zone, all `DNS only`:
+
+| Type | Name | Priority | Value |
+| --- | --- | --- | --- |
+| MX | `@` | 10 | `mx.zoho.in` |
+| MX | `@` | 20 | `mx2.zoho.in` |
+| MX | `@` | 50 | `mx3.zoho.in` |
+| TXT | `@` | — | `v=spf1 include:zoho.in ~all` |
+| TXT | `zoho._domainkey` | — | `v=DKIM1; k=rsa; p=…` (2048-bit, selector `zoho`) |
+| TXT | `_dmarc` | — | `v=DMARC1; p=none; rua=mailto:dmarc@zoho.com; ruf=mailto:dmarc@zoho.com; sp=none; adkim=r; aspf=r` |
+
+And two more Zoho asked for to prove ownership:
+
+| Type | Name | Value |
+| --- | --- | --- |
+| CNAME | `zb50111306` | `zmverify.zoho.in` |
+| TXT | `@` | `zoho-verification=zb50111306.zmverify.zoho.in` |
+
+Every record above resolves from public DNS. The DKIM public key is long and is
+elided here on purpose — re-copy it from the admin console
+(Domains → `healthaali.in` → DKIM → `zoho`) rather than from this file, so a
+rotated key is never typed from stale documentation.
+
+**Do not touch the two proxied apex CNAMEs while changing mail records.**
+`healthaali.in` and `www.healthaali.in` must stay proxied for the site to serve;
+mail records must all be `DNS only`, because a proxied record is answered by
+Cloudflare's edge and never reaches Zoho's nameservers. The two record sets
+share the `@` name without conflict — Cloudflare allows several `TXT` records
+under one name, which is why the SPF and the ownership token can sit together.
+
+**Zoho's in-console verifier lagged behind public DNS, then caught up.** For
+several hours after these records were added, the *Verify* buttons for MX, SPF
+and DKIM all reported failure and the dashboard's Security panel read MX 0/1,
+SPF 0/1, DKIM 0/1 — even though the zone answered `dig` with all three Zoho
+hosts and the SPF, DKIM and DMARC `TXT` records exactly as written above.
+Nothing was wrong with the DNS; the console was reporting a stale result.
+Re-reading the same dashboard later, with no DNS change at all, MX and SPF had
+moved to 1/1 by themselves. DKIM was settled through Domains →
+`healthaali.in` → DKIM → `zoho` → *Log in to my DNS*, which re-ran the check and
+returned "DKIM selector is successfully verified"; it changed no DNS — the
+public `zoho._domainkey` answer is still the one 410-character TXT RR, split
+across two character-strings. The lesson survives the fix: treat a Zoho
+verification failure as a signal to run `dig` first, not as an instruction to
+re-add records that are already correct.
+
+**Receiving is proven; sending is not.** A message from the owner's personal
+Gmail arrived in the mailbox, so the inbound path works end to end. No mail has
+yet been sent *out* of `info@healthaali.in`, so DKIM alignment in a recipient's
+spam folder is configured but unobserved. Reply to anything in the inbox to
+close that gap.
 
 ## 3. Cloudflare Pages project
 
@@ -339,8 +422,18 @@ through `CLOUDFLARE_API`, so treat its Cloudflare API branch — the Deployments
 reading included — as unproven. That is not a formality; it is the one part of
 this file with no evidence behind it yet. Everything in §1–§3 that leaves a
 public trace has been verified against the live site: the launch run reported
-**9 satisfied, 2 outstanding, 0 problems**, and the outstanding pair is exactly
-the absent MX records and the skipped deep mode.
+**9 satisfied, 2 outstanding, 0 problems**, and the outstanding pair was
+exactly the absent MX records and the skipped deep mode. The MX half of that
+pair has since been configured by hand (§2), after which the same command
+reported **10 satisfied, 1 outstanding, 0 problems** — the mail records read
+`✓ mx.zoho.in, mx2.zoho.in, mx3.zoho.in`. A third run, once SPF, DKIM and
+DMARC had been confirmed end to end, reported **11 satisfied, 1 outstanding,
+0 problems**: the command now also reads `✓ Mail authentication` covering those
+three, so a record deleted or rotated in the zone is caught rather than
+assumed. The one remaining outstanding item is the skipped deep mode. That
+independent read of public DNS is what showed Zoho's console, rather than the
+zone, was the thing out of step; Zoho's own counters have since reached MX 1/1,
+SPF 1/1 and DKIM 1/1 with no change to the records.
 
 The same check runs unattended as `launch-check.yml` every six hours. It reads
 the token from a repository secret of the same name when one exists, so a

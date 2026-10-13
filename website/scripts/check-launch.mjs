@@ -39,7 +39,8 @@
  *   6. Certificate     enough validity left that an unnoticed renewal failure
  *                      is caught weeks early, not by a browser warning
  *   7. Mail            MX records exist, so the published `info@` address is
- *                      not a black hole
+ *                      not a black hole, and SPF/DKIM/DMARC exist so what it
+ *                      sends is not filed as spam
  *   8. Pages project   the `*.pages.dev` project exists and serves something,
  *                      which is true independently of the custom domain
  *   9. Cloudflare      *only when a read-only token is in the environment*:
@@ -535,6 +536,60 @@ async function checkMail() {
   }
 
   ok("Mail records", sorted.map((mx) => mx.exchange).join(", "));
+}
+
+/**
+ * One TXT RR, reassembled from the character-strings DNS splits it into.
+ * `resolveTxt` answers with `string[][]`; a 2048-bit DKIM key arrives as two
+ * of them and means nothing unless they are joined back together.
+ */
+async function readTxt(name) {
+  const { values, error } = await resolve(dns.resolveTxt, name);
+  return { values: error ? [] : values.map((chunks) => chunks.join("")), error };
+}
+
+/**
+ * Receiving is only half of mail. SPF, DKIM and DMARC decide whether anything
+ * *sent* from info@ is treated as genuine or quietly filed as spam, so their
+ * absence is a problem even though the MX check above has already passed.
+ */
+async function checkMailAuthentication() {
+  const [spf, dkim, dmarc] = await Promise.all([
+    readTxt(HOST),
+    readTxt(`zoho._domainkey.${HOST}`),
+    readTxt(`_dmarc.${HOST}`),
+  ]);
+
+  const spfRecord = spf.values.find((txt) => txt.startsWith("v=spf1"));
+  // Require a real key after `p=`, not merely the tag: a truncated or empty
+  // `p=` parses fine and verifies nothing, which is the failure worth catching.
+  const dkimRecord = dkim.values.find(
+    (txt) => txt.startsWith("v=DKIM1") && /\bp=[A-Za-z0-9+/=]{40,}/.test(txt)
+  );
+  const dmarcRecord = dmarc.values.find((txt) => txt.startsWith("v=DMARC1"));
+
+  const missing = [
+    spfRecord ? null : "SPF",
+    dkimRecord ? null : "DKIM",
+    dmarcRecord ? null : "DMARC",
+  ].filter(Boolean);
+
+  if (missing.length > 0) {
+    problem(
+      "Mail authentication",
+      `no ${missing.join(", ")} record — mail sent from info@${HOST} carries no ` +
+        `sender authentication and is likely to be filed as spam (LAUNCH.md §2)`
+    );
+    return;
+  }
+
+  const policy = /(?:^|;)\s*p=([a-z]+)/i.exec(dmarcRecord)?.[1] ?? "unset";
+  const keyLength = (/\bp=([A-Za-z0-9+/=]+)/.exec(dkimRecord) ?? ["", ""])[1].length;
+  ok(
+    "Mail authentication",
+    `SPF ${spfRecord.includes("include:zoho.in") ? "include:zoho.in" : "present"}, ` +
+      `DKIM selector zoho (${keyLength}-character key), DMARC p=${policy}`
+  );
 }
 
 /* ── 8. the Pages project itself ──────────────────────────────────────────── */
@@ -1108,6 +1163,7 @@ async function main() {
   checkHeaders(homepage);
   await checkCertificate(homepage);
   await checkMail();
+  await checkMailAuthentication();
   await checkPagesProject();
   await checkCloudflare();
 
