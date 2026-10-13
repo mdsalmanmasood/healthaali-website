@@ -39,7 +39,7 @@ One comparison is worth sitting with. A plate of two rotis, a katori of dal, a b
 
 ## Where fish sits in the week
 
-For a kitchen that cooks non-veg, fish is usually the fastest of the options: a piece of fish is cooked through in minutes, where a chicken curry takes longer and mutton longer still. It is also the non-veg dish most often cooked as a fry, which is exactly why the leaf version is worth adding to the rotation — it keeps what people like about a fried fish and drops most of the oil.
+For a kitchen that cooks non-veg, fish is usually the fastest of the options: a piece of fish is cooked through in minutes, where a chicken curry takes longer and mutton longer still. It is also the non-veg dish most often cooked as a fry, which is exactly why the leaf version is worth adding to the rotation — it keeps what people like about a fried fish and drops most of the oil. And for the evenings when even minimal oil feels like too much setup, there is now [the zero-oil dry-pan version](/blog/zero-oil-fish-fry): same craving, five minutes, no kadai of oil to heat or store.
 
 If fish is not on your table, nothing in the arithmetic changes. Paneer, eggs, soya and dal sit in the same column above, and the plate logic below works with any of them.
 
