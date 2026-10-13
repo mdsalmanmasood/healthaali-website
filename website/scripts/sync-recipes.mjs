@@ -73,6 +73,7 @@ import {
   sortByPublished,
 } from "../src/lib/recipe-schema.mjs";
 import { embedsByVideo, findGaps, gapsFor, readPosts } from "./lib/editorial-gaps.mjs";
+import { RETRYABLE_STATUS, fetchWithRetry } from "./lib/fetch-retry.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, "..");
@@ -517,7 +518,19 @@ async function sync() {
   const channelId = await resolveChannelId(CHANNEL_INPUT);
   log(`\nSyncing recipes from YouTube channel ${channelId}\n`);
 
-  const feedResponse = await get(FEED(channelId)).catch((error) => {
+  /* The feed endpoint flaps — transient 500s and even 404s on a URL that
+     answers 200 a minute later (1 and 13 October 2026) — so one failure must
+     not red the scheduled run. 404 is retried here and only here: the default
+     set excludes it, and a mistyped handle or URL still fails fast inside
+     resolveChannelId above. */
+  const feedResponse = await fetchWithRetry(() => get(FEED(channelId)), {
+    retryStatuses: new Set([...RETRYABLE_STATUS, 404]),
+    onRetry: ({ attempt, attempts, status, error, delayMs }) =>
+      log(
+        `  feed attempt ${attempt}/${attempts} failed ` +
+          `(${status ? `HTTP ${status}` : (error?.message ?? error)}) — retrying in ${delayMs / 1000}s…`
+      ),
+  }).catch((error) => {
     fail(`Could not reach the YouTube feed: ${error?.message ?? error}`);
   });
   if (!feedResponse.ok) {
